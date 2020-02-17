@@ -2,46 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../lab1/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/ClojureProjectResolveSettings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/libraries/Leiningen__clojure_complete_0_2_5.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/libraries/Leiningen__nrepl_0_6_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/libraries/Leiningen__org_clojure_clojure_1_10_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/libraries/Leiningen__org_clojure_core_specs_alpha_0_2_44.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/libraries/Leiningen__org_clojure_spec_alpha_0_2_176.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/CHANGELOG.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/doc/intro.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/lab1.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/project.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/src/lab1/core.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/src/lab1/functions.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../lab1/test/lab1/core_test.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/ClojureProjectResolveSettings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Leiningen__clojure_complete_0_2_5.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Leiningen__nrepl_0_6_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Leiningen__org_clojure_clojure_1_10_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Leiningen__org_clojure_core_specs_alpha_0_2_44.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/Leiningen__org_clojure_spec_alpha_0_2_176.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/doc/intro.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lab2.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/project.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/lab2/core.clj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/lab2/core_test.clj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/lab2/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/src/lab2/core.clj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,6 +33,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
+  <component name="ReplState" timestamp="1581980465038">{:repl-history {:ide [], :local [], :remote []}}</component>
   <component name="RunManager" selected="Clojure REPL.lab2 REPL">
     <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
       <setting name="replType" value="NREPL" />
@@ -128,7 +91,7 @@
       <option name="presentableId" value="Default" />
       <updated>1581947019364</updated>
       <workItem from="1581947022127" duration="416000" />
-      <workItem from="1581970633017" duration="2370000" />
+      <workItem from="1581970633017" duration="4626000" />
     </task>
     <servers />
   </component>
@@ -145,6 +108,10 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="414" y="208" width="1121" height="698" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581947437520" />
+    <state x="532" y="34" width="864" height="1046" key="#lab2_REPL" timestamp="1581979045656">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="532" y="34" width="864" height="1046" key="#lab2_REPL/0.34.1920.1046@0.34.1920.1046" timestamp="1581979045656" />
     <state width="1862" height="259" key="GridCell.Tab.0.bottom" timestamp="1581947444130">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
