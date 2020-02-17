@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3b8fd9f7-ec87-4784-8f1d-a92b2a35af1e" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Clojure Namespace" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1XuCOmuYjrhGF0wokQLG0Ywg4CN" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="cursive.last.file.extension./home/nikita/Clojure/lab1/src" value="clj" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../lab2" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+  </component>
+  <component name="ReplState" timestamp="1581900220124">{:repl-history {:ide [], :local [{:command &quot;\n((fn [x y z] (list (first x) (first y) (first z))) '(V B N J H) '('(Y U I) '(H J K) '(8) 78) '(df FG HJ K L '(O 0 9)))&quot;, :offset 119, :ns &quot;lab1.core&quot;} {:command &quot;(ns lab1.core\n  (:gen-class))&quot;, :offset 29, :ns &quot;lab1.core&quot;} {:command &quot;(defn -main\n  \&quot;I don't do a whole lot ... yet.\&quot;\n  [&amp; args]\n  (println \&quot;Hello, World!\&quot;)\n  )&quot;, :offset 90, :ns &quot;lab1.core&quot;} {:command &quot;((fn [x y z] (list (first x) (first y) (first z))) '(V B N J H) '((Y U I) (H J K) (8) 78) '(df FG HJ K L (O 0 9)))&quot;, :offset 114, :ns &quot;lab1.core&quot;} {:command &quot;(defn CreateNewList\n  [x y z]\n  (list (first (rest (rest x))) (first (rest (rest (rest y)))) (first (rest (rest (rest (rest (rest z)))))))\n  )&quot;, :offset 142, :ns &quot;lab1.core&quot;} {:command &quot;(defn EvalSets\n  [x y]\n  ((clojure.set/intersection (clojure.set/difference x y)\n                             (clojure.set/difference (clojure.set/union x y)\n                                                     (clojure.set/intersection x y)))))&quot;, :offset 245, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '#{V B N J H} '#{#{Y U I} #{H J K} #{8} 78})&quot;, :offset 54, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '#{V B N J H} '#{(Y U I) (H J K) (8) 78})&quot;, :offset 51, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '#{V B N J H} '#{'(Y U I) '(H J K) '(8) 78})&quot;, :offset 54, :ns &quot;lab1.core&quot;} {:command &quot;(def A '(V B N J H))&quot;, :offset 20, :ns &quot;lab1.core&quot;} {:command &quot;(def B '((Y U I) (H J K) (8) 78))&quot;, :offset 33, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '(set A) '(set B))&quot;, :offset 28, :ns &quot;lab1.core&quot;} {:command &quot;(println (EvalSets '(set A) '(set B)))&quot;, :offset 38, :ns &quot;lab1.core&quot;} {:command &quot;(def D '(V B N A W))&quot;, :offset 20, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '(V B N J H) '(V B N A W))&quot;, :offset 36, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets #{V B N J H} #{V B N A W})&quot;, :offset 36, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '#{V B N J H} '#{V B N A W})&quot;, :offset 38, :ns &quot;lab1.core&quot;} {:command &quot;(println (set A))&quot;, :offset 17, :ns &quot;lab1.core&quot;} {:command &quot;(defn EvalSets\n  [x y]\n  (clojure.set/intersection '(clojure.set/difference x y)\n                            '(clojure.set/difference '(clojure.set/union x y)\n                                                     '(clojure.set/intersection x y))))&quot;, :offset 246, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '(set A) '(set D))&quot;, :offset 28, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets (set A) (set D))&quot;, :offset 26, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets 'x 'y)&quot;, :offset 16, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets #{x y} #{x 3 y})&quot;, :offset 26, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '#{x y} '#{x 3 y})&quot;, :offset 28, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/intersection #{2 4} #{1 4})&quot;, :offset 40, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/intersection '(set A) '(set B))&quot;, :offset 44, :ns &quot;lab1.core&quot;} {:command &quot;(def A (V B N J H))&quot;, :offset 19, :ns &quot;lab1.core&quot;} {:command &quot;(defn EvalSets\n  [x y]\n  (clojure.set/intersection (clojure.set/difference x y)\n                            (clojure.set/difference (clojure.set/union x y)\n                                                     (clojure.set/intersection x y))))&quot;, :offset 242, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/intersection (set A) (set B))&quot;, :offset 42, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/intersection (set A) (set D))&quot;, :offset 42, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/intersection (clojure.set/difference A B)\n                          (clojure.set/difference (clojure.set/union A B)\n                                                  (clojure.set/intersection A B)))&quot;, :offset 211, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/difference (clojure.set/union A B)\n                        (clojure.set/intersection A B))&quot;, :offset 103, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/difference '(clojure.set/union A B)\n                        '(clojure.set/intersection A B))&quot;, :offset 105, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/difference A B)&quot;, :offset 28, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/difference '(clojure.set/union (set A) (set B))\n                        '(clojure.set/intersection (set A) (set B)))&quot;, :offset 129, :ns &quot;lab1.core&quot;} {:command &quot;(clojure.set/difference (clojure.set/union (set A) (set B))\n                        (clojure.set/intersection (set A) (set B)))&quot;, :offset 127, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets A B)&quot;, :offset 14, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '(V B N J H) B)&quot;, :offset 25, :ns &quot;lab1.core&quot;} {:command &quot;(CreateNewList '(V B N J H) '((Y U I) (H J K) (8) 78) '(df FG HJ K L (O 0 9)))&quot;, :offset 78, :ns &quot;lab1.core&quot;} {:command &quot;(defn EvalSets\n  [x y]\n  (clojure.set/intersection (clojure.set/difference (set x) (set y))\n                            (clojure.set/difference (clojure.set/union (set x) (set y))\n                                                     (clojure.set/intersection (set x) (set y)))))&quot;, :offset 278, :ns &quot;lab1.core&quot;} {:command &quot;(EvalSets '(V B N J H) '((Y U I) (H J K) (8) 78))&quot;, :offset 49, :ns &quot;lab1.core&quot;}], :remote []}}</component>
+  <component name="RunManager" selected="Clojure REPL.REPL for lab1">
+    <configuration name="REPL for lab1" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <module name="lab1" />
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="$PROJECT_DIR$" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <module name="" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="ClojureREPL" factoryName="Remote" activateToolWindowBeforeRun="false">
+      <setting name="host" value="" />
+      <setting name="port" value="0" />
+      <setting name="replType" value="SOCKET" />
+      <setting name="configType" value="SPECIFY" />
+      <setting name="fixLineNumbers" value="false" />
+      <module name="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="lab1.functions" type="ClojureScriptRunConfiguration" factoryName="Clojure Script" temporary="true">
+      <module name="lab1" />
+      <setting name="path" value="$PROJECT_DIR$/src/lab1/functions.clj" />
+      <setting name="namespace" value="" />
+      <setting name="execution" value="INTELLIJ" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workDir" value="$PROJECT_DIR$/src/lab1" />
+      <method v="2" />
+    </configuration>
+    <configuration name="lab1 run" type="LeiningenRunConfiguration" factoryName="Leiningen">
+      <module name="lab1" />
+      <arguments argument="run" />
+      <setting name="profiles" value="" />
+      <setting name="trampoline" value="true" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Clojure Application.lab1.functions" />
+      <item itemvalue="Clojure REPL.REPL for lab1" />
+      <item itemvalue="Leiningen.lab1 run" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Clojure Application.lab1.functions" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3b8fd9f7-ec87-4784-8f1d-a92b2a35af1e" name="Default Changelist" comment="" />
+      <created>1581886562612</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1581886562612</updated>
+      <workItem from="1581886567247" duration="6008000" />
+      <workItem from="1581946852292" duration="48000" />
+      <workItem from="1581947008781" duration="430000" />
+      <workItem from="1581970633911" duration="9000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="532" y="34" width="864" height="1046" key="#REPL_for_lab1" timestamp="1581895233067">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="532" y="34" width="864" height="1046" key="#REPL_for_lab1/0.34.1920.1046@0.34.1920.1046" timestamp="1581895233067" />
+    <state x="414" y="208" width="1157" height="698" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1581886758455">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="414" y="208" width="1157" height="698" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581886758455" />
+    <state x="532" y="34" width="864" height="1046" key="#functions" timestamp="1581897529283">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="532" y="34" width="864" height="1046" key="#functions/0.34.1920.1046@0.34.1920.1046" timestamp="1581897529283" />
+    <state x="690" y="258" width="530" height="605" key="FileChooserDialogImpl" timestamp="1581947018767">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="690" y="258" width="530" height="605" key="FileChooserDialogImpl/0.34.1920.1046@0.34.1920.1046" timestamp="1581947018767" />
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom" timestamp="1581900220022">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom/0.34.1920.1046@0.34.1920.1046" timestamp="1581900220022" />
+    <state width="1862" height="259" key="GridCell.Tab.0.center" timestamp="1581900220022">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.center/0.34.1920.1046@0.34.1920.1046" timestamp="1581900220022" />
+    <state width="1862" height="259" key="GridCell.Tab.0.left" timestamp="1581900220022">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.left/0.34.1920.1046@0.34.1920.1046" timestamp="1581900220022" />
+    <state width="1862" height="259" key="GridCell.Tab.0.right" timestamp="1581900220022">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.right/0.34.1920.1046@0.34.1920.1046" timestamp="1581900220022" />
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog" timestamp="1581947009786">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581947009786" />
+    <state x="540" y="250" key="run.anything.popup" timestamp="1581897673940">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="540" y="250" key="run.anything.popup/0.34.1920.1046@0.34.1920.1046" timestamp="1581897673940" />
+    <state x="439" y="45" width="1039" height="1034" key="search.everywhere.popup" timestamp="1581895143538">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="439" y="45" width="1039" height="1034" key="search.everywhere.popup/0.34.1920.1046@0.34.1920.1046" timestamp="1581895143538" />
+  </component>
+</project>

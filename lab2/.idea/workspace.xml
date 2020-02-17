@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectId" id="1XwAwDLg7bfDxVeL664ZOKIycJS" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+  </component>
+  <component name="RunManager" selected="Clojure REPL.lab2 REPL">
+    <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <module name="" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="ClojureREPL" factoryName="Remote" activateToolWindowBeforeRun="false">
+      <setting name="host" value="" />
+      <setting name="port" value="0" />
+      <setting name="replType" value="SOCKET" />
+      <setting name="configType" value="SPECIFY" />
+      <setting name="fixLineNumbers" value="false" />
+      <module name="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="lab2 REPL" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <module name="lab2" />
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="$PROJECT_DIR$" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration name="lab2 run" type="LeiningenRunConfiguration" factoryName="Leiningen">
+      <module name="lab2" />
+      <arguments argument="run" />
+      <setting name="profiles" value="" />
+      <setting name="trampoline" value="false" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Clojure REPL.lab2 REPL" />
+      <item itemvalue="Leiningen.lab2 run" />
+    </list>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="" />
+      <created>1581947019364</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1581947019364</updated>
+      <workItem from="1581947022127" duration="416000" />
+      <workItem from="1581970633017" duration="1917000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$" />
+    </ignored-roots>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="414" y="208" width="1121" height="698" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1581947437520">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="414" y="208" width="1121" height="698" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581947437520" />
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom" timestamp="1581947444130">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
+    <state width="1862" height="259" key="GridCell.Tab.0.center" timestamp="1581947444130">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.center/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
+    <state width="1862" height="259" key="GridCell.Tab.0.left" timestamp="1581947444130">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.left/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
+    <state width="1862" height="259" key="GridCell.Tab.0.right" timestamp="1581947444130">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state width="1862" height="259" key="GridCell.Tab.0.right/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
+    <state x="325" y="104" width="1269" height="912" key="SettingsEditor" timestamp="1581977336141">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="325" y="104" width="1269" height="912" key="SettingsEditor/0.34.1920.1046@0.34.1920.1046" timestamp="1581977336141" />
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog" timestamp="1581970644727">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581970644727" />
+  </component>
+</project>
