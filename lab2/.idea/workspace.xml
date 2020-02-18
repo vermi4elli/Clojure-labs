@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../lab1/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lab1/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../lab1/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lab2/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/src/lab2/core.clj" afterDir="false" />
     </list>
@@ -33,7 +35,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
-  <component name="ReplState" timestamp="1581990595835">{:repl-history {:ide [], :local [], :remote []}}</component>
+  <component name="ReplState" timestamp="1582026545297">{:repl-history {:ide [], :local [], :remote []}}</component>
   <component name="RunManager" selected="Clojure REPL.lab2 REPL">
     <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
       <setting name="replType" value="NREPL" />
@@ -91,7 +93,8 @@
       <option name="presentableId" value="Default" />
       <updated>1581947019364</updated>
       <workItem from="1581947022127" duration="416000" />
-      <workItem from="1581970633017" duration="14157000" />
+      <workItem from="1581970633017" duration="14604000" />
+      <workItem from="1582020960825" duration="3206000" />
     </task>
     <servers />
   </component>
@@ -112,29 +115,29 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="532" y="34" width="864" height="1046" key="#lab2_REPL/0.34.1920.1046@0.34.1920.1046" timestamp="1581979045656" />
-    <state width="1862" height="259" key="GridCell.Tab.0.bottom" timestamp="1581947444130">
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom" timestamp="1582022451601">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1862" height="259" key="GridCell.Tab.0.bottom/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
-    <state width="1862" height="259" key="GridCell.Tab.0.center" timestamp="1581947444130">
+    <state width="1862" height="259" key="GridCell.Tab.0.bottom/0.34.1920.1046@0.34.1920.1046" timestamp="1582022451601" />
+    <state width="1862" height="259" key="GridCell.Tab.0.center" timestamp="1582022451600">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1862" height="259" key="GridCell.Tab.0.center/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
-    <state width="1862" height="259" key="GridCell.Tab.0.left" timestamp="1581947444130">
+    <state width="1862" height="259" key="GridCell.Tab.0.center/0.34.1920.1046@0.34.1920.1046" timestamp="1582022451600" />
+    <state width="1862" height="259" key="GridCell.Tab.0.left" timestamp="1582022451600">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1862" height="259" key="GridCell.Tab.0.left/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
-    <state width="1862" height="259" key="GridCell.Tab.0.right" timestamp="1581947444130">
+    <state width="1862" height="259" key="GridCell.Tab.0.left/0.34.1920.1046@0.34.1920.1046" timestamp="1582022451600" />
+    <state width="1862" height="259" key="GridCell.Tab.0.right" timestamp="1582022451600">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1862" height="259" key="GridCell.Tab.0.right/0.34.1920.1046@0.34.1920.1046" timestamp="1581947444130" />
+    <state width="1862" height="259" key="GridCell.Tab.0.right/0.34.1920.1046@0.34.1920.1046" timestamp="1582022451600" />
     <state x="325" y="104" width="1269" height="912" key="SettingsEditor" timestamp="1581977336141">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="325" y="104" width="1269" height="912" key="SettingsEditor/0.34.1920.1046@0.34.1920.1046" timestamp="1581977336141" />
-    <state x="544" y="346" key="com.intellij.ide.util.TipDialog" timestamp="1581970644727">
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog" timestamp="1582020962305">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state x="544" y="346" key="com.intellij.ide.util.TipDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1581970644727" />
+    <state x="544" y="346" key="com.intellij.ide.util.TipDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1582020962305" />
   </component>
 </project>

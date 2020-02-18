@@ -39,9 +39,9 @@
 
 ; The third task of the lab3
 ; written the text
-(def text "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt\nmollit anim id est laborum.")
+(def text "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
 ; deleted symbols '.', ','
-(def cleanText (clojure.string/split (clojure.string/replace text #"[,.\\]" "") #" "))
+(def cleanText (clojure.string/split (clojure.string/lower-case (clojure.string/replace text #"[,.]" "")) #" "))
 ; 1) quicksorting the word sequence by the alphabet
 (def sortedByAlphabet (quicksort cleanText))
 
