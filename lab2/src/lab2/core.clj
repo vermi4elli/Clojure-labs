@@ -43,10 +43,12 @@
 ; deleted symbols '.', ','
 (def cleanText (clojure.string/split (clojure.string/replace text #"[,.\\]" "") #" "))
 ; 1) quicksorting the word sequence by the alphabet
-(quicksort cleanText)
+(def sortedByAlphabet (quicksort cleanText))
 
 ; 2) quicksorting the word sequence by the amount of letters
 
 ; creating a map "amount of letters" -> [words]
 (def cleanTextLetterAmount (group-by count cleanText))
-
+; creating a vector of words sorted by the amount of letters
+(def sortedByLetterAmount (into [] cat (for [i (quicksort (keys cleanTextLetterAmount))]
+                                         (get cleanTextLetterAmount i))))
