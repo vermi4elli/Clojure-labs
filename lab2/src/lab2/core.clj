@@ -22,15 +22,18 @@
 (GenerateSequenceDumbMethod [1] 0 4)
 
 ; The second task of the lab2
-; Creating functions: swap      - to swap two elements of the vector
-;                                 based on their INDEXES
-;                     partition - to get index of the index in the vector
-;                                 which will cut the vector in two parts
-;                     quicksort - the sorting algorithm itself
-(defn swap [v i1 i2]
-  (assoc v i2 (v i1) i1 (v i2)))
+; quicksort - the sorting algorithm
+(defn quicksort [coll]
+  (if (seq coll)
+    ; choosing the pivot randomly from the vector
+    (let [pivot   (rand-nth coll)
+          pivots  (filter #(= % pivot) coll)
+          less    (filter #(< % pivot) coll)
+          greater (filter #(> % pivot) coll)]
+      (apply vector (concat (quicksort less) pivots (quicksort greater))))
+    ; return the coll if it's empty
+    coll))
 
-(swap '[1 3 5 67] 0 2)
+; Just calling the function
+(quicksort [252 32 1  4 23 2])
 
-(defn partition
-  [])
