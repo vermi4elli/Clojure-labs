@@ -33,7 +33,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
-  <component name="ReplState" timestamp="1581980465038">{:repl-history {:ide [], :local [], :remote []}}</component>
+  <component name="ReplState" timestamp="1581984239871">{:repl-history {:ide [], :local [], :remote []}}</component>
   <component name="RunManager" selected="Clojure REPL.lab2 REPL">
     <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
       <setting name="replType" value="NREPL" />
@@ -91,7 +91,7 @@
       <option name="presentableId" value="Default" />
       <updated>1581947019364</updated>
       <workItem from="1581947022127" duration="416000" />
-      <workItem from="1581970633017" duration="4626000" />
+      <workItem from="1581970633017" duration="7803000" />
     </task>
     <servers />
   </component>
