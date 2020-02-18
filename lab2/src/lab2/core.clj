@@ -27,13 +27,26 @@
   (if (seq coll)
     ; choosing the pivot randomly from the vector
     (let [pivot   (rand-nth coll)
-          pivots  (filter #(= % pivot) coll)
-          less    (filter #(< % pivot) coll)
-          greater (filter #(> % pivot) coll)]
+          pivots  (filter #(= 0 (compare % pivot)) coll)
+          less    (filter #(> 0 (compare % pivot)) coll)
+          greater (filter #(< 0 (compare % pivot)) coll)]
       (apply vector (concat (quicksort less) pivots (quicksort greater))))
     ; return the coll if it's empty
     coll))
 
 ; Just calling the function
 (quicksort [252 32 1  4 23 2])
+
+; The third task of the lab3
+; written the text
+(def text "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt\nmollit anim id est laborum.")
+; deleted symbols '.', ','
+(def cleanText (clojure.string/split (clojure.string/replace text #"[,.\\]" "") #" "))
+; 1) quicksorting the word sequence by the alphabet
+(quicksort cleanText)
+
+; 2) quicksorting the word sequence by the amount of letters
+
+; creating a map "amount of letters" -> [words]
+(def cleanTextLetterAmount (group-by count cleanText))
 
