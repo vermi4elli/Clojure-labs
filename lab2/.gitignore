@@ -10,3 +10,4 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+./src/lab2/test.clj

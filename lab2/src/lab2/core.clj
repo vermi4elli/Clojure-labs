@@ -16,10 +16,10 @@
   (if (< y (- z 1)) (let [value (* -1 (* 2 (peek x)))
                           counter (+ y 1)]
                           (GenerateSequenceDumbMethod (conj x value) counter z))
-                    (println x)))
+                    x))
 
 ; Just calling the function
-(GenerateSequenceDumbMethod [1] 0 4)
+(GenerateSequenceDumbMethod [1] 0 6)
 
 ; The second task of the lab2
 ; quicksort - the sorting algorithm
@@ -36,6 +36,7 @@
 
 ; Just calling the function
 (quicksort [252 32 1  4 23 2])
+(quicksort (GenerateSequenceDumbMethod [1] 0 6))
 
 ; The third task of the lab3
 ; written the text
@@ -50,5 +51,8 @@
 ; creating a map "amount of letters" -> [words]
 (def cleanTextLetterAmount (group-by count cleanText))
 ; creating a vector of words sorted by the amount of letters
+
+(keys cleanTextLetterAmount)
+
 (def sortedByLetterAmount (into [] cat (for [i (quicksort (keys cleanTextLetterAmount))]
                                          (get cleanTextLetterAmount i))))

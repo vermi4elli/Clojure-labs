@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../lab1/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../lab1/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../lab1/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lab2/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/src/lab2/core.clj" afterDir="false" />
     </list>
@@ -11,6 +10,13 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Clojure Namespace" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -26,6 +32,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
+    <property name="cursive.last.file.extension./home/nikita/Clojure/lab2/src" value="clj" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
@@ -35,7 +42,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
-  <component name="ReplState" timestamp="1582026545297">{:repl-history {:ide [], :local [], :remote []}}</component>
+  <component name="ReplState" timestamp="1582032483047">{:repl-history {:ide [], :local [{:command &quot;(GenerateSequenceDumbMethod [1] 0 4)&quot;, :offset 36, :ns &quot;lab2.core&quot;} {:command &quot;(def cleanText (clojure.string/split (clojure.string/lower-case (clojure.string/replace text #\&quot;[,.\\\\]\&quot; \&quot;\&quot;)) #\&quot; \&quot;))&quot;, :offset 114, :ns &quot;lab2.core&quot;} {:command &quot;(def sortedByLetterAmount (into [] cat (doseq [i (quicksort (keys cleanTextLetterAmount))]\n                                         (get cleanTextLetterAmount i))))&quot;, :offset 164, :ns &quot;lab2.core&quot;} {:command &quot;(defn GenerateSequenceDumbMethod\n  [x y z]\n  (if (&lt; y (- z 1)) (let [value (* -1 (* 2 (peek x)))\n                          counter (+ y 1)]\n                          (GenerateSequenceDumbMethod (conj x value) counter z))\n                    (println x)))&quot;, :offset 254, :ns &quot;lab2.core&quot;} {:command &quot;(defn GenerateSequenceDumbMethod\n  [x y z]\n  (if (&lt; y (- z 1)) (let [value (* -1 (* 2 (peek x)))\n                          counter (+ y 1)]\n                          (GenerateSequenceDumbMethod (conj x value) counter z))\n                    (x)))&quot;, :offset 246, :ns &quot;lab2.core&quot;} {:command &quot;(defn GenerateSequenceDumbMethod\n  [x y z]\n  (if (&lt; y (- z 1)) (let [value (* -1 (* 2 (peek x)))\n                          counter (+ y 1)]\n                          (GenerateSequenceDumbMethod (conj x value) counter z))\n                    x))&quot;, :offset 244, :ns &quot;lab2.core&quot;} {:command &quot;(GenerateSequenceDumbMethod [1] 0 6)&quot;, :offset 36, :ns &quot;lab2.core&quot;} {:command &quot;(defn quicksort [coll]\n  (if (seq coll)\n    ; choosing the pivot randomly from the vector\n    (let [pivot   (rand-nth coll)\n          pivots  (filter #(= 0 (compare % pivot)) coll)\n          less    (filter #(&gt; 0 (compare % pivot)) coll)\n          greater (filter #(&lt; 0 (compare % pivot)) coll)]\n      (apply vector (concat (quicksort less) pivots (quicksort greater))))\n    ; return the coll if it's empty\n    coll))&quot;, :offset 417, :ns &quot;lab2.core&quot;} {:command &quot;(quicksort [252 32 1  4 23 2])&quot;, :offset 30, :ns &quot;lab2.core&quot;} {:command &quot;(quicksort (GenerateSequenceDumbMethod [1] 0 6))&quot;, :offset 48, :ns &quot;lab2.core&quot;} {:command &quot;(def text \&quot;Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\&quot;)&quot;, :offset 123, :ns &quot;lab2.core&quot;} {:command &quot;(def cleanText (clojure.string/split (clojure.string/lower-case (clojure.string/replace text #\&quot;[,.]\&quot; \&quot;\&quot;)) #\&quot; \&quot;))&quot;, :offset 112, :ns &quot;lab2.core&quot;} {:command &quot;cleanText&quot;, :offset 9, :ns &quot;lab2.core&quot;} {:command &quot;(def sortedByAlphabet (quicksort cleanText))&quot;, :offset 44, :ns &quot;lab2.core&quot;} {:command &quot;sortedByAlphabet&quot;, :offset 16, :ns &quot;lab2.core&quot;} {:command &quot;(def cleanTextLetterAmount (group-by count cleanText))&quot;, :offset 54, :ns &quot;lab2.core&quot;} {:command &quot;cleanTextLetterAmount&quot;, :offset 21, :ns &quot;lab2.core&quot;} {:command &quot;(keys cleanTextLetterAmount)&quot;, :offset 28, :ns &quot;lab2.core&quot;} {:command &quot;(def sortedByLetterAmount (into [] cat (for [i (quicksort (keys cleanTextLetterAmount))]\n                                         (get cleanTextLetterAmount i))))&quot;, :offset 162, :ns &quot;lab2.core&quot;} {:command &quot;sortedByLetterAmount&quot;, :offset 20, :ns &quot;lab2.core&quot;}], :remote []}}</component>
   <component name="RunManager" selected="Clojure REPL.lab2 REPL">
     <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
       <setting name="replType" value="NREPL" />
@@ -94,7 +101,7 @@
       <updated>1581947019364</updated>
       <workItem from="1581947022127" duration="416000" />
       <workItem from="1581970633017" duration="14604000" />
-      <workItem from="1582020960825" duration="3206000" />
+      <workItem from="1582020960825" duration="6905000" />
     </task>
     <servers />
   </component>
@@ -139,5 +146,9 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="544" y="346" key="com.intellij.ide.util.TipDialog/0.34.1920.1046@0.34.1920.1046" timestamp="1582020962305" />
+    <state x="540" y="250" key="run.anything.popup" timestamp="1582027612703">
+      <screen x="0" y="34" width="1920" height="1046" />
+    </state>
+    <state x="540" y="250" key="run.anything.popup/0.34.1920.1046@0.34.1920.1046" timestamp="1582027612703" />
   </component>
 </project>
