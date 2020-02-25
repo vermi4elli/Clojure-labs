@@ -8,11 +8,14 @@
          '[clojure.data.json :as js])
 
 (defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+  [call]
+  (if (string? call)
+    (cond
+      (= "load(" (subs call 0 5)) (load (subs call 6 (- (clojure.string/last-index-of call ")") 1)))
+      :else (println "Sorry, can't process this"))
+    (println "Sorry, can't process this")))
 
-; ========= First task - parsing the first csv files ==========
+; ========= FIRST task - parsing the files ==========
 
 ;1.1) ----------- parsing the FIRST MANDATORY file 'mp-posts_full'
 (def mp-posts_full (vec (rest (vec (with-open [reader (io/reader "../data files/mp-posts_full.csv")]
@@ -56,3 +59,9 @@
 (def mps-declarations_rada (vec (with-open [reader (io/reader "../data files/mps-declarations_rada.json")]
                                   (doall
                                     (js/read reader)))))
+
+
+; ========= THIRD task - writing a general function 'load' for opening all files ==========
+
+(defn load [path]
+  (println path))
