@@ -61,7 +61,7 @@
                                     (js/read reader)))))
 
 
-; ========= THIRD task - writing a general function 'load' for opening all files ==========
+; ========= SECOND task - writing a general function 'loadFile' for opening all file types ==========
 ; also writing functions for each file type to make the code simpler
 
 ;function for .csv parsing
@@ -85,9 +85,38 @@
            (js/read reader)))))
 
 ;general function for parsing .csv, .tsv, .json files
-(defn load [path]
+(defn loadFile [path]
   (case (subs path (clojure.string/last-index-of path "."))
     ".csv"  (readCSV path)
     ".tsv"  (readTSV path)
     ".json" (readJSON path)
+    "Incorrect file path or type!"))
+
+; ========= THIRD task - writing a general function 'load' for printing all files ==========
+
+(defn printCSV [path]
+  (for [line (vec (with-open [reader (io/reader path)]
+         (doall
+           (csv/read-csv reader))))]
+    (println line)))
+
+(defn printTSV [path]
+  (for [line (vec (for [string (vec (doall
+                                    (line-seq
+                                      (io/reader path))))]
+                  (vec (clojure.string/split
+                         (clojure.string/replace string #"\t" "|") #"\|"))))]
+    (println line)))
+
+(defn printJSON [path]
+  (for [line (vec (with-open [reader (io/reader path)]
+                  (doall
+                    (js/read reader))))]
+    (println line)))
+
+(defn load [path]
+  (case (subs path (clojure.string/last-index-of path "."))
+    ".csv"  (printCSV path)
+    ".tsv"  (printTSV path)
+    ".json" (printJSON path)
     "Incorrect file path or type!"))
