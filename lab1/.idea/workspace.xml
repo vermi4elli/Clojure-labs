@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3b8fd9f7-ec87-4784-8f1d-a92b2a35af1e" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../lab3/.idea/libraries/Leiningen__org_clojure_data_csv_1_0_0.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../lab2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../lab2/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../lab2/src/lab2/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/../lab2/src/lab2/core.clj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lab3/lab3.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../lab3/lab3.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lab3/project.clj" beforeDir="false" afterPath="$PROJECT_DIR$/../lab3/project.clj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lab3/src/lab3/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/../lab3/src/lab3/core.clj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +36,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="cursive.last.file.extension./home/nikita/Clojure/lab1/src" value="clj" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../lab2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -122,6 +124,7 @@
       <workItem from="1581947008781" duration="430000" />
       <workItem from="1581970633911" duration="9000" />
       <workItem from="1582020977015" duration="3574000" />
+      <workItem from="1582625929311" duration="535000" />
     </task>
     <servers />
   </component>
