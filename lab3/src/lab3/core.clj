@@ -120,5 +120,3 @@
     ".tsv"  (printTSV path)
     ".json" (printJSON path)
     "Incorrect file path or type!"))
-
-
