@@ -67,3 +67,22 @@
   [head & lines]
   (vec (map #(zipmap (map keyword head) %1) lines)))
 
+; (defn readTSV [path]
+;  (vec (for [string (vec (doall
+;                           (line-seq
+;                             (io/reader path))))]
+;         (vec (clojure.string/split
+;                (clojure.string/replace string #"\t" "|") #"\|")))))
+
+(defn readTSV_temp [path]
+  (vec (vec (doall
+              (line-seq
+                (io/reader path))))))
+
+(def temp
+  (nth (readTSV_temp "../data files/plenary_register_mps-skl9.tsv") 1))
+
+(defn temp_fn
+  [string]
+  (clojure.string/split (last (clojure.string/split
+    (clojure.string/replace string #"\t" "/") #"/")) #"\|"))
