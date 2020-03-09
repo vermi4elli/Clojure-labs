@@ -32,9 +32,9 @@
 
 ;function for .csv parsing
 (defn readCSV [path]
-  (vec (rest (vec (with-open [reader (io/reader path)]
-                    (doall
-                      (csv/read-csv reader)))))))
+  (vec (vec (with-open [reader (io/reader path)]
+              (doall
+                (csv/read-csv reader))))))
 
 ;function for .tsv parsing
 (defn readTSV [path]
@@ -59,4 +59,11 @@
     "Incorrect file path or type!"))
 
 ; ========================================
+; The interface of 'SELECT' query
+
+; Using zipmap to create vector of maps with header line as keys
+; for data in the following lines
+(defn mapData
+  [head & lines]
+  (vec (map #(zipmap (map keyword head) %1) lines)))
 
