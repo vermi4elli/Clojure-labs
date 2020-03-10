@@ -82,7 +82,7 @@
     "Incorrect file path or type!"))
 
 ; ========================================
-; The parsed files:
+; The parsed files and their choice:
 
 ; MANDATORY
 (def mp-posts_full
@@ -100,6 +100,17 @@
 (def mps-declarations_rada
   (loadFile "../data files/mps-declarations_rada.json"))
 
+; Returns the file you want to see
+(defn choose_file
+  [name]
+  (case name
+    "mp-posts_full" mp-posts_full
+    "map_zal-skl9" map_zal-skl9
+    "plenary_register_mps-skl9" plenary_register_mps-skl9
+    "plenary_vote_results-skl9" plenary_vote_results-skl9
+    "mps-declarations_rada" mps-declarations_rada
+    ))
+
 ; ========================================
 ; Implementation for SELECT query
 
@@ -109,17 +120,17 @@
 (defn select
   [query]
   (let [[file & columns] query]
-    (case file
-      ; MANDATORY
-      "mp-posts_full" (for [element mp-posts_full]
-                        (for [column (vec columns)] (get element (keyword column))))
-      "map_zal-skl9" (for [element map_zal-skl9]
-                        (for [column (vec columns)] (get element (keyword column))))
-      "plenary_register_mps-skl9" (for [element plenary_register_mps-skl9]
-                        (for [column (vec columns)] (get element (keyword column))))
-      ; ADDITIONAL
-      "plenary_vote_results-skl9" (for [element plenary_vote_results-skl9]
-                        (for [column (vec columns)] (get element (keyword column))))
-      ; EXTRA
-      "mps-declarations_rada" (for [element mps-declarations_rada]
-                        (for [column (vec columns)] (get element (keyword column)))))))
+    (for [element (choose_file file)]
+      (for [column (vec columns)] (get element (keyword column))))))
+
+; ========================================
+; Implementation for SELECT DISTINCT query
+
+(def query
+  ["mp-posts_full" "mp_id"])
+
+(defn select_distinct
+  [query]
+  (let [[file & columns] query]
+    (set (for [element (choose_file file)]
+      (for [column (vec columns)] (get element (keyword column)))))))
