@@ -38,11 +38,25 @@
 
 ;function for .tsv parsing
 (defn readTSV [path]
-  (vec (for [string (vec (doall
-                           (line-seq
-                             (io/reader path))))]
-         (vec (clojure.string/split
-                (clojure.string/replace string #"\t" "|") #"\|")))))
+  (apply conj (vector (clojure.string/split
+                        (clojure.string/replace
+                          (first
+                            (vec
+                              (doall
+                                (line-seq
+                                  (io/reader path))))) #"\t" "|") #"\|"))
+              (for [string (rest (vec
+                                   (doall
+                                     (line-seq
+                                       (io/reader path)))))]
+                (conj
+                  (vec
+                    (butlast (clojure.string/split
+                               (clojure.string/replace string #"\t" "/") #"/")))
+                  (clojure.string/split
+                    (last
+                      (clojure.string/split
+                        (clojure.string/replace string #"\t" "/") #"/")) #"\|")))))
 
 ;function for .json parsing
 (defn readJSON [path]
@@ -50,22 +64,25 @@
          (doall
            (js/read reader)))))
 
+; Using zipmap to create vector of maps with header line as keys
+; for data in the following lines
+(defn mapData
+  [head & lines]
+  (vec (map #(zipmap (map keyword head) %1) lines)))
+
 ;general function for parsing .csv, .tsv, .json files
 (defn loadFile [path]
   (case (subs path (clojure.string/last-index-of path "."))
-    ".csv"  (readCSV path)
-    ".tsv"  (readTSV path)
+    ".csv"  (apply mapData (readCSV path))
+    ".tsv"  (apply mapData (readTSV path))
     ".json" (readJSON path)
     "Incorrect file path or type!"))
 
 ; ========================================
 ; The interface of 'SELECT' query
 
-; Using zipmap to create vector of maps with header line as keys
-; for data in the following lines
-(defn mapData
-  [head & lines]
-  (vec (map #(zipmap (map keyword head) %1) lines)))
+
+
 
 ; (defn readTSV [path]
 ;  (vec (for [string (vec (doall
@@ -74,15 +91,28 @@
 ;         (vec (clojure.string/split
 ;                (clojure.string/replace string #"\t" "|") #"\|")))))
 
-(defn readTSV_temp [path]
-  (vec (vec (doall
-              (line-seq
-                (io/reader path))))))
 
 (def temp
-  (nth (readTSV_temp "../data files/plenary_register_mps-skl9.tsv") 1))
+  (nth (readTSV "../data files/plenary_register_mps-skl9.tsv") 1))
 
 (defn temp_fn
   [string]
   (clojure.string/split (last (clojure.string/split
     (clojure.string/replace string #"\t" "/") #"/")) #"\|"))
+
+(defn temp2_fn
+  [string]
+  (vec (butlast (clojure.string/split
+                                (clojure.string/replace string #"\t" "/") #"/"))))
+
+(defn temp3_fn
+  [string]
+  (conj (vec (butlast (clojure.string/split
+                     (clojure.string/replace string #"\t" "/") #"/")))
+          (clojure.string/split (last (clojure.string/split
+                                        (clojure.string/replace string #"\t" "/") #"/")) #"\|")))
+
+(vec (clojure.string/split
+               (clojure.string/replace (first (vec (doall
+                      (line-seq
+                        (io/reader path))))) #"\t" "|") #"\|"))
