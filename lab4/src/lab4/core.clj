@@ -81,38 +81,3 @@
 ; ========================================
 ; The interface of 'SELECT' query
 
-
-
-
-; (defn readTSV [path]
-;  (vec (for [string (vec (doall
-;                           (line-seq
-;                             (io/reader path))))]
-;         (vec (clojure.string/split
-;                (clojure.string/replace string #"\t" "|") #"\|")))))
-
-
-(def temp
-  (nth (readTSV "../data files/plenary_register_mps-skl9.tsv") 1))
-
-(defn temp_fn
-  [string]
-  (clojure.string/split (last (clojure.string/split
-    (clojure.string/replace string #"\t" "/") #"/")) #"\|"))
-
-(defn temp2_fn
-  [string]
-  (vec (butlast (clojure.string/split
-                                (clojure.string/replace string #"\t" "/") #"/"))))
-
-(defn temp3_fn
-  [string]
-  (conj (vec (butlast (clojure.string/split
-                     (clojure.string/replace string #"\t" "/") #"/")))
-          (clojure.string/split (last (clojure.string/split
-                                        (clojure.string/replace string #"\t" "/") #"/")) #"\|")))
-
-(vec (clojure.string/split
-               (clojure.string/replace (first (vec (doall
-                      (line-seq
-                        (io/reader path))))) #"\t" "|") #"\|"))
