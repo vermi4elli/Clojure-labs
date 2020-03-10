@@ -103,3 +103,23 @@
 ; ========================================
 ; Implementation for SELECT query
 
+(def query
+  ["plenary_register_mps-skl9" "date_agenda" "presence"])
+
+(defn select
+  [query]
+  (let [[file & columns] query]
+    (case file
+      ; MANDATORY
+      "mp-posts_full" (for [element mp-posts_full]
+                        (for [column (vec columns)] (get element (keyword column))))
+      "map_zal-skl9" (for [element map_zal-skl9]
+                        (for [column (vec columns)] (get element (keyword column))))
+      "plenary_register_mps-skl9" (for [element plenary_register_mps-skl9]
+                        (for [column (vec columns)] (get element (keyword column))))
+      ; ADDITIONAL
+      "plenary_vote_results-skl9" (for [element plenary_vote_results-skl9]
+                        (for [column (vec columns)] (get element (keyword column))))
+      ; EXTRA
+      "mps-declarations_rada" (for [element mps-declarations_rada]
+                        (for [column (vec columns)] (get element (keyword column)))))))
