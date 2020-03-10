@@ -60,9 +60,12 @@
 
 ;function for .json parsing
 (defn readJSON [path]
-  (vec (with-open [reader (io/reader path)]
+  (vec (for [line (with-open [reader (io/reader path)]
          (doall
-           (js/read reader)))))
+           (js/read reader)))]
+         (zipmap (for [word (keys line)]
+                   (keyword word))
+                 (vals line)))))
 
 ; Using zipmap to create vector of maps with header line as keys
 ; for data in the following lines
@@ -79,5 +82,24 @@
     "Incorrect file path or type!"))
 
 ; ========================================
-; The interface of 'SELECT' query
+; The parsed files:
+
+; MANDATORY
+(def mp-posts_full
+  (loadFile "../data files/mp-posts_full.csv"))
+(def map_zal-skl9
+  (loadFile "../data files/map_zal-skl9.csv"))
+(def plenary_register_mps-skl9
+  (loadFile "../data files/plenary_register_mps-skl9.tsv"))
+
+; ADDITIONAL
+(def plenary_vote_results-skl9
+  (loadFile "../data files/plenary_vote_results-skl9.tsv"))
+
+; EXTRA
+(def mps-declarations_rada
+  (loadFile "../data files/mps-declarations_rada.json"))
+
+; ========================================
+; Implementation for SELECT query
 
