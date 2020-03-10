@@ -131,6 +131,20 @@
 
 (defn select_distinct
   [query]
+  (set query))
+
+; ========================================
+; Implementation for WHERE query
+
+(def query
+  ["mp-posts_full" "mp_id"])
+
+(def clause
+  "mp_id" ">=" "21227")
+
+(defn where
+  [query clause]
   (let [[file & columns] query]
-    (set (for [element (choose_file file)]
-      (for [column (vec columns)] (get element (keyword column)))))))
+    (for [element (choose_file file)]
+      (for [column (vec columns)] (get element (keyword column))))))
+
