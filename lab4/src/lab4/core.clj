@@ -7,12 +7,6 @@
          '[clojure.java.io :as io]
          '[clojure.data.json :as js])
 
-
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
-
 ; ========================================
 ; The list of file names:
 
@@ -136,23 +130,45 @@
 ; ========================================
 ; Implementation for WHERE query
 
+; checks each line in
+(defn check_expression
+  [state data]
+  (eval (read-string (clojure.string/join " " (vector
+                                                "("
+                                                (first state)
+                                                data
+                                                (nth state 1)
+                                                ")")))))
+
+; checks each line of the file on the conditions mentioned in clause
+(defn check_true
+  [clause data]
+    (contains? (set (for [state clause]
+        (when (= false
+                 (check_expression
+                   (vec (rest state))
+                   (nth data (read-string (first state)))))
+          -1))) -1))
+
+; file is the result after 'select' query,
+; clause has the [
+;                 [ number_of_column, ">=" "<>"
+(defn where
+  [file clause]
+  (remove nil? (vec
+   (for [line file]
+    (when (not (check_true clause line)) (vec line))
+   )
+  ))
+)
+
+
 (def query
   ["plenary_register_mps-skl9" "date_agenda" "presence" "id_event"])
 
 (def clause
-   [
-    ; where '1' stands for an index of "presence" in query
-    ["1" ">=" "370"]
-    ])
+  [
+   ; where '1' stands for an index of "presence" in query
+   ["1" ">=" "370"]
+   ])
 
-(defn where
-  [query clause]
-  (let [[file & columns] query]
-    (for [element (choose_file file)]
-      (for [column (vec columns)] (get element (keyword column))))))
-
-(defn where
-  [file clause]
-  ())
-
-(def test_file (select_distinct query))
