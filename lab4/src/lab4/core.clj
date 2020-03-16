@@ -131,16 +131,19 @@
 
 (defn select_distinct
   [query]
-  (set (select query)))
+  (vec (set (select query))))
 
 ; ========================================
 ; Implementation for WHERE query
 
 (def query
-  ["mp-posts_full" "mp_id"])
+  ["plenary_register_mps-skl9" "date_agenda" "presence" "id_event"])
 
 (def clause
-   ["mp_id" ">=" "21227"])
+   [
+    ; where '1' stands for an index of "presence" in query
+    ["1" ">=" "370"]
+    ])
 
 (defn where
   [query clause]
@@ -148,4 +151,8 @@
     (for [element (choose_file file)]
       (for [column (vec columns)] (get element (keyword column))))))
 
-(where query clause)
+(defn where
+  [file clause]
+  ())
+
+(def test_file (select_distinct query))
