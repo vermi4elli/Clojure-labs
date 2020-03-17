@@ -163,24 +163,73 @@
   [file clause]
   (remove nil? (vec
    (for [line file]
-    (when (not (check_true clause line)) (vec line))
-   )
-  ))
-)
-
-
-(def query
-  ["plenary_register_mps-skl9" "date_agenda" "presence" "id_event"])
-
-(def clause
-  [
-   ; where '1' stands for an index of "presence" in query
-   ["1" ">=" "370"]
-   ])
+    (when (not (check_true clause line)) (vec line))))))
 
 ; ========================================
 ; Implementation for query parsing
 
+(defn checkWhere
+  [select_result commands clause]
+  (println "==================CHECKWHERE==================")
+  (println "commands")
+  (println commands)
+  (println "query")
+  (println query)
+  (println "clause")
+  (println clause)
+  (if (not= -1 (.indexOf commands "where"))
+    (where select_result clause)
+    select_result))
+
+(defn checkSelect
+  [query commands]
+  (println "==================CHECKSELECT==================")
+  (println "commands")
+  (println commands)
+  (println "query")
+  (println query)
+  (if (not= -1 (.indexOf commands "distinct"))
+    (select_distinct query)
+    (select query)))
+
+; starts the execution of the correct function
+(defn executeQuery
+  [parsed_query]
+  (println "==================EXECUTEQUERY==================")
+  (let [commands (nth parsed_query 0)
+        query (nth parsed_query 1)
+        clause (if (nth parsed_query 2) (nth parsed_query 2)
+                                        nil)]
+    (println "commands")
+    (println commands)
+    (println "query")
+    (println query)
+    (println "clause")
+    (println clause)
+    (checkWhere (checkSelect query commands) commands clause)
+))
+
+(defn getClause
+  [clause columns]
+  (if (nil? (clojure.string/index-of clause ">="))
+    (vector (str (.indexOf columns (subvec clause 0 (clojure.string/index-of clause "<>"))))
+            "<>"
+            (subvec clause (+ 1 (clojure.string/index-of clause "<>"))))
+    (vector (str (.indexOf columns (subvec clause 0 (clojure.string/index-of clause ">="))))
+            ">="
+            (subvec clause (+ 1 (clojure.string/index-of clause ">=")))))
+  )
+
+; gets those commands from the commands_list in the vector,
+; which are present in the query
+(defn getCommands
+  [query commands_list]
+  (filterv (fn [x] (if (not= -1 (.indexOf commands_list (clojure.string/lower-case x)))
+                     true
+                     false))
+           query))
+
+; gets the vector of all 'columns' from the file we're parsing
 (defn getColumnsFromStar
   [file]
   (loop [x 0
@@ -190,17 +239,50 @@
              (conj result (name (nth (keys (first mp-posts_full)) x))))
       result)))
 
+; parses the query in the format:
+; [ ["command1 (e.g. select)" "command2 (e.g. from)" ...]
+;   ["file_name" "column1" "column2" ...]
+; ]
 (defn parseQuery
-  [query]
-    (def file (subvec query (+ 1 (.indexOf query "from"))))
+  [query_raw commands_list]
+    (def commands (getCommands query_raw commands_list))
+    (def file (if (= -1 (.indexOf commands "where"))
+                (subvec query_raw (+ 1 (.indexOf query_raw "from")))
+                (subvec query_raw (+ 1 (.indexOf query_raw "from") (.indexOf query_raw "where")))))
     (def columns (cond
-                   (not= (clojure.string/lower-case (nth query 1)) "distinct") (subvec query 1 (.indexOf query "from"))
-                   (= (clojure.string/lower-case (nth query 1)) "*") (getColumnsFromStar file))
+                   (not= (clojure.string/lower-case (nth query_raw 1)) "distinct") (subvec query_raw 1 (.indexOf query_raw "from"))
+                   (= (clojure.string/lower-case (nth query_raw 1)) "*") (getColumnsFromStar file)
+                   (= (clojure.string/lower-case (nth query_raw 1)) "distinct") (subvec query_raw 2 (.indexOf query_raw "from")))
                    )
-    (apply conj file columns))
+    (def clause (if (not= -1 (.indexOf commands "where"))
+                 (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
+                 nil))
+    (def query (apply conj file columns))
+    (println "==================PARSEQUERY==================")
+    (println "commands")
+    (println commands)
+    (println "columns")
+    (println columns)
+    (println "query")
+    (println query)
+    (println "clause")
+    (println clause)
+    (vector commands query clause))
 
 (defn -main [& args]
   (println "Write your commands here!")
-  (let [input (read-line)]
-    (parseQuery (clojure.string/split (clojure.string/replace input #"[,;]" "") #" ")))
-    )
+  (let [input (read-line)
+        commands_list ["select" "from" "where" "distinct"]]
+    (executeQuery (parseQuery (clojure.string/split (clojure.string/replace input #"[,;]" "") #" ") commands_list)))
+)
+
+; temp data for testing
+(def query
+  ["plenary_register_mps-skl9" "date_agenda" "presence" "id_event"])
+
+; temp data for testing
+(def clause
+  [
+   ; where '1' stands for an index of "presence" in query
+   ["1" ">=" "370"]
+   ])
