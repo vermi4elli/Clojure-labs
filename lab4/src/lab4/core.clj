@@ -1,7 +1,8 @@
 (ns lab4.core
   (:gen-class)
   (:use [clojure.data.csv]
-        [clojure.data.json]))
+        [clojure.data.json]
+        [clojure.string]))
 
 (require '[clojure.data.csv :as csv]
          '[clojure.java.io :as io]
@@ -67,13 +68,18 @@
   [head & lines]
   (vec (map #(zipmap (map keyword head) %1) lines)))
 
+(defn getExtension
+  [path]
+  (cond
+    (= (last path) "n") (subs path ())))
+
 ;general function for parsing .csv, .tsv, .json files
 (defn loadFile [path]
-  (case (subs path (clojure.string/last-index-of path "."))
-    ".csv"  (apply mapData (readCSV path))
-    ".tsv"  (apply mapData (readTSV path))
-    ".json" (readJSON path)
-    "Incorrect file path or type!"))
+  (cond
+    (clojure.string/ends-with? path ".csv")  (apply mapData (readCSV path))
+    (clojure.string/ends-with? path ".tsv")  (apply mapData (readTSV path))
+    (clojure.string/ends-with? path ".json") (readJSON path)
+    :else "Incorrect file path or type!"))
 
 ; ========================================
 ; The parsed files and their choice:
@@ -175,3 +181,22 @@
 ; ========================================
 ; Implementation for query parsing
 
+(defn getCOlumnsFromStar
+  [query]
+  )
+
+(defn parseQuery
+  [query]
+    (def file (subvec query (+ 1 (.indexOf query "from"))))
+    (def columns (cond
+                   (= (clojure.string/lower-case (nth query 1)) "distinct") (subvec query 1 (.indexOf query "from"))
+                   (= (clojure.string/lower-case (nth query 1)) "*") (getColumnsFromStar query))
+                   ))
+    (vec (vector ) (apply conj file columns))
+    )
+
+(defn -main [& args]
+  (println "Write your commands here!")
+  (let [input (read-line)]
+    (parseQuery (clojure.string/split (clojure.string/replace input #"[,;]" "") #" ")))
+    )
