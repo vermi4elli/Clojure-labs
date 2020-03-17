@@ -209,8 +209,10 @@
     (checkWhere (checkSelect query commands) commands clause)
 ))
 
+; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
   [clause columns]
+  (println "==================GETCLAUSE==================")
   (if (nil? (clojure.string/index-of clause ">="))
     (vector (str (.indexOf columns (subvec clause 0 (clojure.string/index-of clause "<>"))))
             "<>"
@@ -232,7 +234,7 @@
 ; gets the vector of all 'columns' from the file we're parsing
 (defn getColumnsFromStar
   [file]
-  (println "==================CHECKSELECT==================")
+  (println "==================GETCOLUMNSFROMSTAR==================")
   (println "file")
   (println file)
   (loop [x 0
@@ -248,10 +250,15 @@
 ; ]
 (defn parseQuery
   [query_raw commands_list]
+    (println "==================PARSEQUERY==================")
     (def commands (getCommands query_raw commands_list))
+    (println "commands")
+    (println commands)
     (def file (if (= -1 (.indexOf commands "where"))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")))
-                (subvec query_raw (+ 1 (.indexOf query_raw "from") (.indexOf query_raw "where")))))
+                (subvec query_raw (+ 1 (.indexOf query_raw "from")) (.indexOf query_raw "where"))))
+    (println "file")
+    (println file)
     (def columns (cond
                    (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
                     (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
@@ -262,19 +269,16 @@
                       (getColumnsFromStar file)
                       (subvec query_raw 2 (.indexOf query_raw "from"))))
                    )
-    (def clause (if (not= -1 (.indexOf commands "where"))
-                 (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
-                 nil))
-    (def query (apply conj file columns))
-    (println "==================PARSEQUERY==================")
-    (println "commands")
-    (println commands)
     (println "columns")
     (println columns)
-    (println "query")
-    (println query)
+    (def clause (if (not= -1 (.indexOf commands "where"))
+                 (getClause (subvec query_raw (.indexOf query_raw "where")) columns)
+                 nil))
     (println "clause")
     (println clause)
+    (def query (apply conj file columns))
+    (println "query")
+    (println query)
     (vector commands query clause))
 
 (defn -main [& args]
