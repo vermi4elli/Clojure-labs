@@ -232,6 +232,9 @@
 ; gets the vector of all 'columns' from the file we're parsing
 (defn getColumnsFromStar
   [file]
+  (println "==================CHECKSELECT==================")
+  (println "file")
+  (println file)
   (loop [x 0
          result []]
     (if (< x (count (keys (first mp-posts_full))))
@@ -250,9 +253,14 @@
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from") (.indexOf query_raw "where")))))
     (def columns (cond
-                   (not= (clojure.string/lower-case (nth query_raw 1)) "distinct") (subvec query_raw 1 (.indexOf query_raw "from"))
-                   (= (clojure.string/lower-case (nth query_raw 1)) "*") (getColumnsFromStar file)
-                   (= (clojure.string/lower-case (nth query_raw 1)) "distinct") (subvec query_raw 2 (.indexOf query_raw "from")))
+                   (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
+                    (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
+                      (getColumnsFromStar file)
+                      (subvec query_raw 1 (.indexOf query_raw "from")))
+                   (= (clojure.string/lower-case (nth query_raw 1)) "distinct")
+                    (if (= (clojure.string/lower-case (nth query_raw 2)) "*")
+                      (getColumnsFromStar file)
+                      (subvec query_raw 2 (.indexOf query_raw "from"))))
                    )
     (def clause (if (not= -1 (.indexOf commands "where"))
                  (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
