@@ -181,19 +181,23 @@
 ; ========================================
 ; Implementation for query parsing
 
-(defn getCOlumnsFromStar
-  [query]
-  )
+(defn getColumnsFromStar
+  [file]
+  (loop [x 0
+         result []]
+    (if (< x (count (keys (first mp-posts_full))))
+      (recur (+ x 1)
+             (conj result (name (nth (keys (first mp-posts_full)) x))))
+      result)))
 
 (defn parseQuery
   [query]
     (def file (subvec query (+ 1 (.indexOf query "from"))))
     (def columns (cond
-                   (= (clojure.string/lower-case (nth query 1)) "distinct") (subvec query 1 (.indexOf query "from"))
-                   (= (clojure.string/lower-case (nth query 1)) "*") (getColumnsFromStar query))
-                   ))
-    (vec (vector ) (apply conj file columns))
-    )
+                   (not= (clojure.string/lower-case (nth query 1)) "distinct") (subvec query 1 (.indexOf query "from"))
+                   (= (clojure.string/lower-case (nth query 1)) "*") (getColumnsFromStar file))
+                   )
+    (apply conj file columns))
 
 (defn -main [& args]
   (println "Write your commands here!")
