@@ -68,11 +68,6 @@
   [head & lines]
   (vec (map #(zipmap (map keyword head) %1) lines)))
 
-(defn getExtension
-  [path]
-  (cond
-    (= (last path) "n") (subs path ())))
-
 ;general function for parsing .csv, .tsv, .json files
 (defn loadFile [path]
   (cond
@@ -157,8 +152,10 @@
           -1))) -1))
 
 ; file is the result after 'select' query,
-; clause has the [
-;                 [ number_of_column, ">=" "<>"
+; clause has the next structure:
+; [
+;   [ "number_of_column" ">=/not=" "bound" ]
+; ]
 (defn where
   [file clause]
   (remove nil? (vec
@@ -170,24 +167,24 @@
 
 (defn checkWhere
   [select_result commands clause]
-  (println "==================CHECKWHERE==================")
-  (println "commands")
-  (println commands)
-  (println "query")
-  (println query)
-  (println "clause")
-  (println clause)
+  ;(println "==================CHECKWHERE==================")
+  ;(println "commands")
+  ;(println commands)
+  ;(println "query")
+  ;(println query)
+  ;(println "clause")
+  ;(println clause)
   (if (not= -1 (.indexOf commands "where"))
     (where select_result (vector clause))
     select_result))
 
 (defn checkSelect
   [query commands]
-  (println "==================CHECKSELECT==================")
-  (println "commands")
-  (println commands)
-  (println "query")
-  (println query)
+  ;(println "==================CHECKSELECT==================")
+  ;(println "commands")
+  ;(println commands)
+  ;(println "query")
+  ;(println query)
   (if (not= -1 (.indexOf commands "distinct"))
     (select_distinct query)
     (select query)))
@@ -195,30 +192,31 @@
 ; starts the execution of the correct function
 (defn executeQuery
   [parsed_query]
-  (println "==================EXECUTEQUERY==================")
+  ;(println "==================EXECUTEQUERY==================")
   (let [commands (nth parsed_query 0)
         query (nth parsed_query 1)
-        clause (if (nth parsed_query 2) (nth parsed_query 2)
-                                        nil)]
-    (println "commands")
-    (println commands)
-    (println "query")
-    (println query)
-    (println "clause")
-    (println clause)
+        clause (if (nth parsed_query 2)
+                 (nth parsed_query 2)
+                 nil)]
+    ;(println "commands")
+    ;(println commands)
+    ;(println "query")
+    ;(println query)
+    ;(println "clause")
+    ;(println clause)
     (clojure.pprint/pprint (checkWhere (checkSelect query commands) commands clause))
 ))
 
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
   [clause_undone columns]
-  (println "==================GETCLAUSE==================")
+  ;(println "==================GETCLAUSE==================")
   (def clause (clojure.string/replace (str clause_undone) #"[\"\[\]]" ""))
-  (println "clause")
-  (println clause)
-  (println (type clause))
-  (println "columns")
-  (println columns)
+  ;(println "clause")
+  ;(println clause)
+  ;(println (type clause))
+  ;(println "columns")
+  ;(println columns)
   (if (nil? (clojure.string/index-of clause ">="))
     (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause "<>"))))
             "not="
@@ -240,9 +238,9 @@
 ; gets the vector of all 'columns' from the file we're parsing
 (defn getColumnsFromStar
   [file]
-  (println "==================GETCOLUMNSFROMSTAR==================")
-  (println "file")
-  (println file)
+  ;(println "==================GETCOLUMNSFROMSTAR==================")
+  ;(println "file")
+  ;(println file)
   (loop [x 0
          result []]
     (if (< x (count (keys (first mp-posts_full))))
@@ -251,20 +249,21 @@
       result)))
 
 ; parses the query in the format:
-; [ ["command1 (e.g. select)" "command2 (e.g. from)" ...]
-;   ["file_name" "column1" "column2" ...]
+; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
+;   query:    ["file_name" "column1" "column2" ...]
+;   clause:   ["index_of_column" ">=/not=" "bound"]
 ; ]
 (defn parseQuery
   [query_raw commands_list]
-    (println "==================PARSEQUERY==================")
+    ;(println "==================PARSEQUERY==================")
     (def commands (getCommands query_raw commands_list))
-    (println "commands")
-    (println commands)
+    ;(println "commands")
+    ;(println commands)
     (def file (if (= -1 (.indexOf commands "where"))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")) (.indexOf query_raw "where"))))
-    (println "file")
-    (println file)
+    ;(println "file")
+    ;(println file)
     (def columns (cond
                    (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
                     (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
@@ -275,22 +274,22 @@
                       (getColumnsFromStar file)
                       (subvec query_raw 2 (.indexOf query_raw "from"))))
                    )
-    (println "columns")
-    (println columns)
+    ;(println "columns")
+    ;(println columns)
     (def clause (if (not= -1 (.indexOf commands "where"))
                  (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
                  nil))
-    (println "==================")
-    (println "clause")
-    (println clause)
+    ;(println "==================")
+    ;(println "clause")
+    ;(println clause)
     (def query (apply conj file columns))
-    (println "query")
-    (println query)
+    ;(println "query")
+    ;(println query)
     (vector commands query clause))
 
 (defn -main [& args]
   (println "Write your commands here!")
-  (print "~>")
+  (print "~> ")
   (flush)
   (def commands_list ["select" "from" "where" "distinct"])
   (loop [input (read-line)]
