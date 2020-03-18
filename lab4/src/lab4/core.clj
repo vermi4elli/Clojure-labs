@@ -206,7 +206,7 @@
     (println query)
     (println "clause")
     (println clause)
-    (checkWhere (checkSelect query commands) commands clause)
+    (clojure.pprint/pprint (checkWhere (checkSelect query commands) commands clause))
 ))
 
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
@@ -290,9 +290,12 @@
 
 (defn -main [& args]
   (println "Write your commands here!")
-  (let [input (read-line)
-        commands_list ["select" "from" "where" "distinct"]]
-    (executeQuery (parseQuery (clojure.string/split (clojure.string/replace input #"[,;]" "") #" ") commands_list)))
+  (print "~>")
+  (flush)
+  (def commands_list ["select" "from" "where" "distinct"])
+  (loop [input (read-line)]
+    (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
+  (recur (-main))
 )
 
 ; temp data for testing
@@ -305,3 +308,5 @@
    ; where '1' stands for an index of "presence" in query
    ["1" ">=" "370"]
    ])
+
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
