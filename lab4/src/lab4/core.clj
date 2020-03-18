@@ -219,14 +219,9 @@
   (println (type clause))
   (println "columns")
   (println columns)
-  (print "column : ")
-  (println (subs clause 0 (clojure.string/index-of clause ">=")))
-  (println (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause ">=")))))
-  (print "bound : ")
-  (println (subs clause (clojure.string/index-of clause ">=")))
   (if (nil? (clojure.string/index-of clause ">="))
     (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause "<>"))))
-            "<>"
+            "not="
             (str (subs clause (+ 2 (clojure.string/index-of clause "<>")))))
     (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause ">="))))
             ">="
