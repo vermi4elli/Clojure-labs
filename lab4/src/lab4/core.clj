@@ -178,7 +178,7 @@
   (println "clause")
   (println clause)
   (if (not= -1 (.indexOf commands "where"))
-    (where select_result clause)
+    (where select_result (vector clause))
     select_result))
 
 (defn checkSelect
@@ -211,15 +211,26 @@
 
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
-  [clause columns]
+  [clause_undone columns]
   (println "==================GETCLAUSE==================")
+  (def clause (clojure.string/replace (str clause_undone) #"[\"\[\]]" ""))
+  (println "clause")
+  (println clause)
+  (println (type clause))
+  (println "columns")
+  (println columns)
+  (print "column : ")
+  (println (subs clause 0 (clojure.string/index-of clause ">=")))
+  (println (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause ">=")))))
+  (print "bound : ")
+  (println (subs clause (clojure.string/index-of clause ">=")))
   (if (nil? (clojure.string/index-of clause ">="))
-    (vector (str (.indexOf columns (subvec clause 0 (clojure.string/index-of clause "<>"))))
+    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause "<>"))))
             "<>"
-            (subvec clause (+ 1 (clojure.string/index-of clause "<>"))))
-    (vector (str (.indexOf columns (subvec clause 0 (clojure.string/index-of clause ">="))))
+            (str (subs clause (+ 2 (clojure.string/index-of clause "<>")))))
+    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause ">="))))
             ">="
-            (subvec clause (+ 1 (clojure.string/index-of clause ">=")))))
+            (str (subs clause (+ 2 (clojure.string/index-of clause ">="))))))
   )
 
 ; gets those commands from the commands_list in the vector,
@@ -272,8 +283,9 @@
     (println "columns")
     (println columns)
     (def clause (if (not= -1 (.indexOf commands "where"))
-                 (getClause (subvec query_raw (.indexOf query_raw "where")) columns)
+                 (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
                  nil))
+    (println "==================")
     (println "clause")
     (println clause)
     (def query (apply conj file columns))
