@@ -217,12 +217,13 @@
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
   [clause_undone columns]
-  ;(println "==================GETCLAUSE==================")
+  (println "==================GETCLAUSE==================")
   (def clause (clojure.string/replace (str clause_undone) #"[\"\[\]]" ""))
-  ;(print "clause: ")
-  ;(println clause)
-  ;(print "columns: ")
-  ;(println columns)
+  (print "clause: ")
+  (println clause)
+  (println (type clause))
+  (print "columns: ")
+  (println columns)
   (if (nil? (clojure.string/index-of clause ">="))
     (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause "<>"))))
             "not="
@@ -261,15 +262,15 @@
 ; ]
 (defn parseQuery
   [query_raw commands_list]
-    ;(println "==================PARSEQUERY==================")
+    (println "==================PARSEQUERY==================")
     (def commands (getCommands query_raw commands_list))
-    ;(print "commands: ")
-    ;(println commands)
+    (print "commands: ")
+    (println commands)
     (def file (if (= -1 (.indexOf commands "where"))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")))
                 (subvec query_raw (+ 1 (.indexOf query_raw "from")) (.indexOf query_raw "where"))))
-    ;(print "file: ")
-    ;(println file)
+    (print "file: ")
+    (println file)
     (def columns (cond
                    (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
                     (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
@@ -280,24 +281,24 @@
                       (getColumnsFromStar file)
                       (subvec query_raw 2 (.indexOf query_raw "from"))))
                    )
-    ;(print "columns: ")
-    ;(println columns)
+    (print "columns: ")
+    (println columns)
     (def clause (if (not= -1 (.indexOf commands "where"))
                  (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
                  nil))
-    ;(println "==================")
-    ;(print "clause: ")
-    ;(println clause)
+    (println "==================")
+    (print "clause: ")
+    (println clause)
     (def query (apply conj file columns))
-    ;(print "query: ")
-    ;(println query)
+    (print "query: ")
+    (println query)
     (vector commands query clause))
 
 (defn -main [& args]
   (println "Write your commands here!")
   (print "~> ")
   (flush)
-  (def commands_list ["select" "from" "where" "distinct"])
+  (def commands_list ["select" "from" "where" "distinct" "order by" "asc" "desc"])
   (loop [input (read-line)]
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main))
