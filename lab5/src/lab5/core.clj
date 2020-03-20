@@ -167,15 +167,15 @@
 
 (defn checkWhere
   [select_result commands clause]
-  ;(println "==================CHECKWHERE==================")
-  ;(print "commands: ")
-  ;(println commands)
-  ;(print "query: ")
-  ;(println query)
-  ;(print "clause: ")
-  ;(println clause)
+  (println "==================CHECKWHERE==================")
+  (print "commands: ")
+  (println commands)
+  (print "query: ")
+  (println query)
+  (print "clause: ")
+  (println clause)
   (if (not= -1 (.indexOf commands "where"))
-    (where select_result (vector clause))
+    (where select_result clause)
     (vec select_result)))
 
 (defn checkSelect
@@ -214,23 +214,64 @@
     (printResult (vec (checkWhere (checkSelect query commands) commands clause)) columns)
     ))
 
+(defn parseComplexClause
+  [clause_undone clauseWord]
+  ()
+  )
+
+; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
+
+
+(defn getSimpleClause
+  [clause_undone columns]
+  (println "==================getSimpleClause==================")
+  (println (count clause_undone))
+  (def clause (str (if (not= -1 (.indexOf clause_undone "not"))
+                                             (nth clause_undone 1)
+                                             (nth clause_undone 0))))
+  (print "clause: ")
+  (println clause)
+  (print "type of the clause: ")
+  (println (type clause))
+  ;
+  (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
+  (def operationsTranslations {">=" ">=", "<>" "not=", "=" "=", "<=" "<="})
+  ;
+  (def operation (first (for [element (keys operationsTranslations)]
+                   (if-not (nil? (clojure.string/index-of clause element)) element))))
+  (print "operation: ")
+  (println operation)
+  ;
+  ;
+  (if (not= -1 (.indexOf clause_undone "not"))
+    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
+            (get operationsTranslations (get oppositeOperations operation))
+            (str (subs clause (+ 2 (clojure.string/index-of clause ">="))))))
+  )
+
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
   [clause_undone columns]
   (println "==================GETCLAUSE==================")
-  (def clause (clojure.string/replace (str clause_undone) #"[\"\[\]]" ""))
-  (print "clause: ")
-  (println clause)
-  (println (type clause))
+  (print "clause undone: ")
+  (println clause_undone)
   (print "columns: ")
   (println columns)
-  (if (nil? (clojure.string/index-of clause ">="))
-    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause "<>"))))
-            "not="
-            (str (subs clause (+ 2 (clojure.string/index-of clause "<>")))))
-    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause ">="))))
-            ">="
-            (str (subs clause (+ 2 (clojure.string/index-of clause ">="))))))
+  ;
+  (def clauseWord (cond
+                    (not= -1 (.indexOf clause_undone "and"))
+                      "and"
+                    (not= -1 (.indexOf clause_undone "or"))
+                      "or"
+                    :else nil))
+  ;
+  (cond
+    (nil? clauseWord) (vector (getSimpleClause clause_undone columns))
+    (= "and" clauseWord) (vector "and" (for [element (parseComplexClause clause_undone clauseWord)]
+                                   (getSimpleClause element columns)))
+    (= "or" clauseWord) (vector "or" (for [element (parseComplexClause clause_undone clauseWord)]
+                                        (getSimpleClause element columns)))
+    )
   )
 
 ; gets those commands from the commands_list in the vector,
@@ -337,3 +378,4 @@
   ])
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100 and not mp_id>=21200;
