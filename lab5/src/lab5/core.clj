@@ -266,9 +266,14 @@
   (def commands (getCommands query_raw commands_list))
   (print "commands: ")
   (println commands)
-  (def file (if (= -1 (.indexOf commands "where"))
-              (subvec query_raw (+ 1 (.indexOf query_raw "from")))
-              (subvec query_raw (+ 1 (.indexOf query_raw "from")) (.indexOf query_raw "where"))))
+  (def file (cond
+              (not= -1 (.indexOf commands "where")) (subvec query_raw
+                                                            (+ 1 (.indexOf query_raw "from"))
+                                                            (.indexOf query_raw "where"))
+              (and (not= -1 (.indexOf commands "order by")) (= -1 (.indexOf commands "where"))) (subvec query_raw
+                                                                                                        (+ 1 (.indexOf query_raw "from"))
+                                                                                                        (.indexOf query_raw "order by"))
+              :else (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
   (print "file: ")
   (println file)
   (def columns (cond
@@ -279,8 +284,7 @@
                  (= (clojure.string/lower-case (nth query_raw 1)) "distinct")
                  (if (= (clojure.string/lower-case (nth query_raw 2)) "*")
                    (getColumnsFromStar file)
-                   (subvec query_raw 2 (.indexOf query_raw "from"))))
-    )
+                   (subvec query_raw 2 (.indexOf query_raw "from")))))
   (print "columns: ")
   (println columns)
   (def clause (if (not= -1 (.indexOf commands "where"))
@@ -311,8 +315,10 @@
 ; temp data for testing
 (def clause
   [
-   ; where '1' stands for an index of "presence" in query
-   ["1" ">=" "370"]
-   ])
+    ; where '1' stands for an index of "presence" in query
+    "OR"
+    ["1" ">=" "370"]
+    ["2" ">=" "50"]
+  ])
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
