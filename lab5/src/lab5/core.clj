@@ -216,37 +216,37 @@
 
 (defn parseComplexClause
   [clause_undone clauseWord]
+  (println "==================parseComplexClause==================")
   ()
   )
 
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 
 
 (defn getSimpleClause
   [clause_undone columns]
   (println "==================getSimpleClause==================")
-  (println (count clause_undone))
   (def clause (str (if (not= -1 (.indexOf clause_undone "not"))
                                              (nth clause_undone 1)
                                              (nth clause_undone 0))))
   (print "clause: ")
   (println clause)
-  (print "type of the clause: ")
-  (println (type clause))
   ;
   (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
-  (def operationsTranslations {">=" ">=", "<>" "not=", "=" "=", "<=" "<="})
+  (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
   ;
-  (def operation (first (for [element (keys operationsTranslations)]
-                   (if-not (nil? (clojure.string/index-of clause element)) element))))
+  (def operation (first (remove nil? (for [element (keys operationsTranslations)]
+                   (if-not (nil? (clojure.string/index-of clause element)) element)))))
   (print "operation: ")
   (println operation)
   ;
   ;
-  (if (not= -1 (.indexOf clause_undone "not"))
-    (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
-            (get operationsTranslations (get oppositeOperations operation))
-            (str (subs clause (+ 2 (clojure.string/index-of clause ">="))))))
+  (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
+          (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
+                                        (get oppositeOperations operation)
+                                        operation))
+          (str (subs clause (+ (count operation) (clojure.string/index-of clause operation)))))
   )
 
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
