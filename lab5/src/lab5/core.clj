@@ -217,7 +217,26 @@
 (defn parseComplexClause
   [clause_undone clauseWord]
   (println "==================parseComplexClause==================")
-  ()
+  (def clause (remove (fn [x] (if (= clauseWord x)
+                                true
+                                false)) clause_undone))
+  (loop [clausesWithNot []
+         index 0
+         clauses []]
+            (if (< index (count clause))
+              (if (= "not" (nth clause index))
+                (recur (conj clausesWithNot (+ 1 index))
+                       (+ 1 index)
+                       clauses)
+                (if (not= -1 (.indexOf clausesWithNot index))
+                  (recur clausesWithNot
+                         (+ 1 index)
+                         (conj clauses (vector "not" (nth clause index))))
+                  (recur clausesWithNot
+                         (+ 1 index)
+                         (conj clauses (vector (nth clause index))))))
+              clauses)
+            )
   )
 
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
@@ -376,6 +395,14 @@
     ["1" ">=" "370"]
     ["2" ">=" "50"]
   ])
+
+(def temp
+  [
+    "mp_id>=21000"
+    "and"
+    "not"
+    "mp_id>=22000"
+   ])
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100 and not mp_id>=21200;
