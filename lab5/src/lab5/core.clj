@@ -267,13 +267,15 @@
   (print "commands: ")
   (println commands)
   (def file (cond
-              (not= -1 (.indexOf commands "where")) (subvec query_raw
-                                                            (+ 1 (.indexOf query_raw "from"))
-                                                            (.indexOf query_raw "where"))
-              (and (not= -1 (.indexOf commands "order by")) (= -1 (.indexOf commands "where"))) (subvec query_raw
-                                                                                                        (+ 1 (.indexOf query_raw "from"))
-                                                                                                        (.indexOf query_raw "order by"))
-              :else (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
+              (not= -1 (.indexOf commands "where"))
+                (subvec query_raw
+                        (+ 1 (.indexOf query_raw "from"))
+                        (.indexOf query_raw "where"))
+              (and (not= -1 (.indexOf commands "order by")) (= -1 (.indexOf commands "where")))
+                (subvec query_raw
+                        (+ 1 (.indexOf query_raw "from"))
+                        (.indexOf query_raw "order by"))
+              (= -1 (.indexOf commands "where")) (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
   (print "file: ")
   (println file)
   (def columns (cond
@@ -287,9 +289,22 @@
                    (subvec query_raw 2 (.indexOf query_raw "from")))))
   (print "columns: ")
   (println columns)
-  (def clause (if (not= -1 (.indexOf commands "where"))
-                (getClause (subvec query_raw (+ 1 (.indexOf query_raw "where"))) columns)
-                nil))
+  (def clause (cond
+                (and (not= -1 (.indexOf commands "where"))
+                     (= -1 (.indexOf commands "order by"))
+                     ; other conditions like 'group by' and so on
+                     )
+                  (getClause
+                    (subvec query_raw (+ 1 (.indexOf query_raw "where")))
+                    columns)
+                (and (not= -1) (.indexOf commands "where")
+                     (not= -1) (.indexOf commands "order by"))
+                  (getClause
+                    (subvec query_raw (+ 1 (.indexOf query_raw "where")) (.indexOf query_raw "order by"))
+                    columns)
+                (= -1 (.indexOf commands "where")) nil
+                ; other conditions
+                ))
   (println "==================")
   (print "clause: ")
   (println clause)
