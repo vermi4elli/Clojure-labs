@@ -141,15 +141,25 @@
                                                 (nth state 1)
                                                 ")")))))
 
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
+
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
-  [clause data]
-  (contains? (set (for [state clause]
+  [clause clauseWord data]
+  ;(println "==================CHECK_TRUE==================")
+  (if (= clauseWord "and")
+    (not (contains? (set (for [state clause]
                     (when (= false
                              (check_expression
                                (vec (rest state))
                                (nth data (read-string (first state)))))
                       -1))) -1))
+    (not (= (count clause) (count (remove nil? (vec (for [state clause]
+                                    (when (= false
+                                             (check_expression
+                                               (vec (rest state))
+                                               (nth data (read-string (first state)))))
+                                      -1)))))))))
 
 ; file is the result after 'select' query,
 ; clause has the next structure:
@@ -157,10 +167,18 @@
 ;   [ "number_of_column" ">=/not=" "bound" ]
 ; ]
 (defn where
-  [file clause]
+  [file clause_undone]
+  (def clauseWord (cond
+                (not= -1 (.indexOf clause_undone "and")) "and"
+                (not= -1 (.indexOf clause_undone "or")) "or"
+                :else nil
+                ))
+  (def clause (if (not= nil clauseWord)
+                (vec (rest clause_undone))
+                clause_undone))
   (remove nil? (vec
                  (for [line file]
-                   (when (not (check_true clause line)) (vec line))))))
+                   (when (check_true clause clauseWord line) (vec line))))))
 
 ; ========================================
 ; Implementation for query parsing
@@ -209,14 +227,14 @@
     ;(println query)
     ;(print "clause: ")
     ;(println clause)
-    (print "columns: ")
-    (println columns)
+    ;(print "columns: ")
+    ;(println columns)
     (printResult (vec (checkWhere (checkSelect query commands) commands clause)) columns)
     ))
 
 (defn parseComplexClause
   [clause_undone clauseWord]
-  (println "==================parseComplexClause==================")
+  ;(println "==================parseComplexClause==================")
   (def clause (remove (fn [x] (if (= clauseWord x)
                                 true
                                 false)) clause_undone))
@@ -245,20 +263,20 @@
 
 (defn getSimpleClause
   [clause_undone columns]
-  (println "==================getSimpleClause==================")
+  ;(println "==================getSimpleClause==================")
   (def clause (str (if (not= -1 (.indexOf clause_undone "not"))
                                              (nth clause_undone 1)
                                              (nth clause_undone 0))))
-  (print "clause: ")
-  (println clause)
+  ;(print "clause: ")
+  ;(println clause)
   ;
   (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
   (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
   ;
   (def operation (first (remove nil? (for [element (keys operationsTranslations)]
                    (if-not (nil? (clojure.string/index-of clause element)) element)))))
-  (print "operation: ")
-  (println operation)
+  ;(print "operation: ")
+  ;(println operation)
   ;
   ;
   (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
@@ -271,11 +289,11 @@
 ; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 (defn getClause
   [clause_undone columns]
-  (println "==================GETCLAUSE==================")
-  (print "clause undone: ")
-  (println clause_undone)
-  (print "columns: ")
-  (println columns)
+  ;(println "==================GETCLAUSE==================")
+  ;(print "clause undone: ")
+  ;(println clause_undone)
+  ;(print "columns: ")
+  ;(println columns)
   ;
   (def clauseWord (cond
                     (not= -1 (.indexOf clause_undone "and"))
@@ -286,9 +304,9 @@
   ;
   (cond
     (nil? clauseWord) (vector (getSimpleClause clause_undone columns))
-    (= "and" clauseWord) (vector "and" (for [element (parseComplexClause clause_undone clauseWord)]
+    (= "and" clauseWord) (apply vector "and" (for [element (parseComplexClause clause_undone clauseWord)]
                                    (getSimpleClause element columns)))
-    (= "or" clauseWord) (vector "or" (for [element (parseComplexClause clause_undone clauseWord)]
+    (= "or" clauseWord) (apply vector "or" (for [element (parseComplexClause clause_undone clauseWord)]
                                         (getSimpleClause element columns)))
     )
   )
@@ -365,7 +383,7 @@
                 (= -1 (.indexOf commands "where")) nil
                 ; other conditions
                 ))
-  (println "==================")
+  ;(println "==================")
   (print "clause: ")
   (println clause)
   (def query (apply conj file columns))
