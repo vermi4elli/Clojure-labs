@@ -336,7 +336,11 @@
 ; parses the query in the format:
 ; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
 ;   query:    ["file_name" "column1" "column2" ...]
-;   clause:   ["index_of_column" ">=/not=" "bound"]
+;   clause:   [
+;               here we put either "and" or "or" or nothing if there is only one condition
+;               ["index_of_column" ">=/not=" "bound"]
+;               ...
+;             ]
 ; ]
 (defn parseQuery
   [query_raw commands_list]
