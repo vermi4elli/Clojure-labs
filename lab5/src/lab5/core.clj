@@ -206,7 +206,7 @@
 (defn orderBy
   [query orderClause]
   (if (not= nil orderClause)
-    (sort-by (juxt (apply keyword orderClause)) query)
+    (sort #(compare (first orderClause) (peek orderClause)) query)
     query))
 
 ; ========================================
@@ -528,17 +528,33 @@
     ["2" ">=" "50"]
   ])
 
-(def temp
-  [
-    ""
-   ])
+(def data [{:mp_id 12 :name "John"}
+           {:mp_id 12 :name "Jack"}
+           {:mp_id 12 :name "Chris"}
+           {:mp_id 12 :name "Zetta"}
+           {:mp_id 12 :name "Alpha"}
+           {:mp_id 1 :name "Bruce"}
+           {:mp_id 7 :name "King"}
+           {:mp_id 47 :name "King"}
+           {:mp_id 71 :name "King"}
+           {:mp_id 17 :name "King"}
+           {:mp_id 6 :name "King"}
+           {:mp_id 9 :name "King"}
+           ])
 
-(def data [{:lastname "Brown" :firstname "John"}
-           {:lastname "Brown" :firstname "Jack"}
-           {:lastname "Apple" :firstname "Bruce"}
-           {:lastname "Crown" :firstname "King"}])
+(def tempColumns [["mp_id" "asc"] ["name" "desc"]])
 
-(sort-by (juxt :lastname :firstname) data)
+(loop [tempColumns
+       data
+       index 0]
+  (if (= index ())))
+
+(sort-by (apply juxt (flatten (for [column tempColumns]
+                                     (keyword column))
+                              )) data)
+
+(sort #(compare [(:mp_id %2) (:name %1)]
+                [(:mp_id %1) (:name %2)]) data)
 
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
