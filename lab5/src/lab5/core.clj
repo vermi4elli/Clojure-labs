@@ -243,6 +243,10 @@
 ;           [ "0" ">=" "21000"]
 ;           [ "0" "<=" "21000"]
 ;          ]
+; it finds 'nots', writes their indexes and then
+; adds to the next element in the clause_undone
+; the resulting vector of elements is then passed
+; element by element into the getSimpleClause
 (defn parseComplexClause
   [clause_undone clauseWord]
   ;(println "==================parseComplexClause==================")
@@ -270,17 +274,20 @@
 
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
 
 ; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 ;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
 (defn getSimpleClause
   [clause_undone columns]
-  ;(println "==================getSimpleClause==================")
-  (def clause (str (if (not= -1 (.indexOf clause_undone "not"))
-                                             (nth clause_undone 1)
-                                             (nth clause_undone 0))))
-  ;(print "clause: ")
-  ;(println clause)
+  (println "==================getSimpleClause==================")
+  (print "clause_undone: ")
+  (println clause_undone)
+  (def clause (if (not= -1 (.indexOf clause_undone "not"))
+                (clojure.string/join " " (subvec clause_undone 1))
+                (clojure.string/join " " (subvec clause_undone 0))))
+  (print "clause: ")
+  (println clause)
   ;
   (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
   (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
@@ -290,12 +297,17 @@
   ;(print "operation: ")
   ;(println operation)
   ;
+  (def column (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation)))))
+  (def finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
+                                                    (get oppositeOperations operation)
+                                                    operation)))
+  (def bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation)))))
   ;
-  (vector (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
-          (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
-                                        (get oppositeOperations operation)
-                                        operation))
-          (str (subs clause (+ (count operation) (clojure.string/index-of clause operation)))))
+  (vector column
+          finalOperation
+          (if (and (starts-with? bound "'") (ends-with? bound "'"))
+            (clojure.string/replace bound "'" "")
+            bound))
   )
 
 ; parses the clause
@@ -399,7 +411,7 @@
                 (= -1 (.indexOf commands "where")) nil
                 ; other conditions
                 ))
-  ;(println "==================")
+  (println "==================")
   (print "clause: ")
   (println clause)
   (def query (apply conj file columns))
@@ -432,10 +444,7 @@
 
 (def temp
   [
-    "mp_id>=21000"
-    "and"
-    "not"
-    "mp_id>=22000"
+    ""
    ])
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
