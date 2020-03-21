@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6d2566b9-cd36-4cf1-a78a-8c23164c5306" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../lab5/src/lab5/core.clj" beforeDir="false" afterPath="$PROJECT_DIR$/../lab5/src/lab5/core.clj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
