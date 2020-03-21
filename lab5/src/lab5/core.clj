@@ -158,11 +158,12 @@
                                                 ")")))))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
-; select distinct row, col from map_zal-skl9 where row>=2 and row<=5 and col>=2 and col<=5;
+; select distinct row, col from map_zal-skl9 where row>=2 and row<=5;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id<>21111;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
+; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row, col;
 
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
@@ -215,14 +216,13 @@
 ; then returns the data after validating if needed
 (defn checkWhere
   [select_result commands clause]
-  (println "==================CHECKWHERE==================")
-  (print "commands: ")
-  (println commands)
-  (print "query: ")
-  (println query)
-  (print "clause: ")
-  (println clause)
-  (println (count select_result))
+  ;(println "==================CHECKWHERE==================")
+  ;(print "commands: ")
+  ;(println commands)
+  ;(print "query: ")
+  ;(println query)
+  ;(print "clause: ")
+  ;(println clause)
   (if (not= -1 (.indexOf commands "where"))
     (where select_result clause)
     select_result))
@@ -246,21 +246,21 @@
 ; makes a map out of the result data to feed it into order by and, then, printResult
 (defn prepareData
   [query columns]
-  (print "query: ")
-  (println query)
-  (print "types of data in query: ")
-  (println (for [element (first query)]
-             (type element)))
+  ;(print "query: ")
+  ;(println query)
+  ;(print "types of data in query: ")
+  ;(println (for [element (first query)]
+  ;           (type element)))
   (def query_remade (vec (for [line query]
                            (vec (for [element line]
-                             (if (isdigit? (first element))
-                               (read-string element)
-                               element))))))
-  (print "query_remade: ")
-  (println query_remade)
-  (print "types of data in query_remade: ")
-  (println (for [element (first query_remade)]
-             (type element)))
+                                  (if (isdigit? (first element))
+                                    (read-string element)
+                                    element))))))
+  ;(print "query_remade: ")
+  ;(println query_remade)
+  ;(print "types of data in query_remade: ")
+  ;(println (for [element (first query_remade)]
+  ;           (type element)))
   (apply mapData (apply vector columns query_remade))
   )
 
@@ -365,11 +365,11 @@
 ; parses the clause
 (defn getClause
   [clause_undone columns]
-  (println "==================GETCLAUSE==================")
-  (print "clause undone: ")
-  (println clause_undone)
-  (print "columns: ")
-  (println columns)
+  ;(println "==================GETCLAUSE==================")
+  ;(print "clause undone: ")
+  ;(println clause_undone)
+  ;(print "columns: ")
+  ;(println columns)
   ;
   (def clauseWord (cond
                     (not= -1 (.indexOf clause_undone "and"))
