@@ -202,6 +202,12 @@
                  (for [line file]
                    (when (check_true clause clauseWord line) (vec line))))))
 
+(defn orderBy
+  [query orderClause]
+  (if (not= nil orderClause)
+    (sort-by (juxt (apply keyword orderClause)) query)
+    query))
+
 ; ========================================
 ; Implementation for query parsing
 
@@ -232,8 +238,14 @@
     (select query)))
 
 (defn printResult
+  [query]
+  (clojure.pprint/print-table query))
+
+; makes a map out of the result data to feed it into order by and, then, printResult
+(defn prepareData
   [query columns]
-  (clojure.pprint/print-table (apply mapData (apply vector columns query))))
+  (apply mapData (apply vector columns query))
+  )
 
 ; starts the execution of the correct function
 (defn executeQuery
@@ -244,6 +256,9 @@
         clause (if (nth parsed_query 2)
                  (nth parsed_query 2)
                  nil)
+        orderClause (if (nth parsed_query 3)
+                      (nth parsed_query 3)
+                      nil)
         columns (vec (rest (nth parsed_query 1)))]
     ;(print "commands: ")
     ;(println commands)
@@ -253,7 +268,7 @@
     ;(println clause)
     ;(print "columns: ")
     ;(println columns)
-    (printResult (vec (checkWhere (checkSelect query commands) commands clause)) columns)
+    (printResult (orderBy (prepareData (checkWhere (checkSelect query commands) commands clause) columns) orderClause))
     ))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
@@ -291,6 +306,7 @@
   )
 
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21900 order by mp_id;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
@@ -332,11 +348,11 @@
 ; parses the clause
 (defn getClause
   [clause_undone columns]
-  ;(println "==================GETCLAUSE==================")
-  ;(print "clause undone: ")
-  ;(println clause_undone)
-  ;(print "columns: ")
-  ;(println columns)
+  (println "==================GETCLAUSE==================")
+  (print "clause undone: ")
+  (println clause_undone)
+  (print "columns: ")
+  (println columns)
   ;
   (def clauseWord (cond
                     (not= -1 (.indexOf clause_undone "and"))
@@ -388,11 +404,18 @@
 ;             ]
 ; ]
 (defn parseQuery
-  [query_raw commands_list]
+  [query_raw_raw commands_list]
   (println "==================PARSEQUERY==================")
+  (def query_raw (if (not= -1 (.indexOf query_raw_raw "order"))
+                   (let [raw (assoc query_raw_raw (.indexOf query_raw_raw "order") "order by")]
+                     (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
+                   query_raw_raw))
+  (print "query_raw: ")
+  (println query_raw)
   (def commands (getCommands query_raw commands_list))
   (print "commands: ")
   (println commands)
+  (println (count commands))
   (def file (cond
               (not= -1 (.indexOf commands "where"))
                 (subvec query_raw
@@ -424,20 +447,46 @@
                   (getClause
                     (subvec query_raw (+ 1 (.indexOf query_raw "where")))
                     columns)
-                (and (not= -1) (.indexOf commands "where")
-                     (not= -1) (.indexOf commands "order by"))
+                (and (not= -1 (.indexOf commands "where"))
+                     (not= -1 (.indexOf commands "order by")))
                   (getClause
                     (subvec query_raw (+ 1 (.indexOf query_raw "where")) (.indexOf query_raw "order by"))
                     columns)
                 (= -1 (.indexOf commands "where")) nil
                 ; other conditions
+                :else "not found"
                 ))
   (print "clause: ")
   (println clause)
   (def query (apply conj file columns))
   (print "query: ")
   (println query)
-  (vector commands query clause))
+  (def orderClause (cond
+                     (not= -1 (.indexOf commands "order by"))
+                        (subvec query_raw (+ 1 (.indexOf query_raw "order by")))
+                     :else nil))
+  (print "orderCLause: ")
+  (println orderClause)
+  (vector commands query clause orderClause))
+
+; ========================================
+; Implementation of the ORDER BY fuction
+
+(defn getOrderClause
+  [clause]
+  ())
+
+; the sorting algorithm we'll be using to sort everything
+(defn quicksort [coll]
+  (if (seq coll)
+    ; choosing the pivot randomly from the vector
+    (let [pivot   (rand-nth coll)
+          pivots  (filter #(= 0 (compare % pivot)) coll)
+          less    (filter #(> 0 (compare % pivot)) coll)
+          greater (filter #(< 0 (compare % pivot)) coll)]
+      (apply vector (concat (quicksort less) pivots (quicksort greater))))
+    ; return the coll if it's empty
+    coll))
 
 (defn -main [& args]
   (println "Write your commands here!")
@@ -466,6 +515,14 @@
   [
     ""
    ])
+
+(def data [{:lastname "Brown" :firstname "John"}
+           {:lastname "Brown" :firstname "Jack"}
+           {:lastname "Apple" :firstname "Bruce"}
+           {:lastname "Crown" :firstname "King"}])
+
+(sort-by (juxt :lastname :firstname) data)
+
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100 and not mp_id>=21200;
