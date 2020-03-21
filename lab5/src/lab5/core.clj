@@ -236,6 +236,8 @@
     (printResult (vec (checkWhere (checkSelect query commands) commands clause)) columns)
     ))
 
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
+
 ; parses the multi conditional clause to the format:
 ; (e.g. from "mp_id>=21000 and mp_id<=21200"
 ;       to [
@@ -243,38 +245,34 @@
 ;           [ "0" ">=" "21000"]
 ;           [ "0" "<=" "21000"]
 ;          ]
-; it finds 'nots', writes their indexes and then
-; adds to the next element in the clause_undone
-; the resulting vector of elements is then passed
-; element by element into the getSimpleClause
 (defn parseComplexClause
   [clause_undone clauseWord]
-  ;(println "==================parseComplexClause==================")
-  (def clause (remove (fn [x] (if (= clauseWord x)
-                                true
-                                false)) clause_undone))
-  (loop [clausesWithNot []
-         index 0
+  (println "==================parseComplexClause==================")
+  (print "clause_undone: ")
+  (println clause_undone)
+  (loop [index 0
+         clauseBonds [0]
          clauses []]
-            (if (< index (count clause))
-              (if (= "not" (nth clause index))
-                (recur (conj clausesWithNot (+ 1 index))
-                       (+ 1 index)
-                       clauses)
-                (if (not= -1 (.indexOf clausesWithNot index))
-                  (recur clausesWithNot
-                         (+ 1 index)
-                         (conj clauses (vector "not" (nth clause index))))
-                  (recur clausesWithNot
-                         (+ 1 index)
-                         (conj clauses (vector (nth clause index))))))
-              clauses)
-            )
+    (if (< index (count clause_undone))
+      (cond
+        (= clauseWord (nth clause_undone index))
+          (recur (+ 1 index)
+                 [(+ 1 index)]
+                 (conj clauses (subvec clause_undone (first clauseBonds) index)))
+        (= index (- (count clause_undone) 1))
+          (recur (+ 1 index)
+                 [(+ 1 index)]
+                 (conj clauses (subvec clause_undone (first clauseBonds))))
+        :else (recur (+ 1 index)
+               clauseBonds
+               clauses))
+      clauses))
   )
 
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
 
 ; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 ;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
@@ -325,6 +323,8 @@
                     (not= -1 (.indexOf clause_undone "or"))
                       "or"
                     :else nil))
+  ;
+  ;(println "==================")
   ;
   (cond
     (nil? clauseWord) (vector (getSimpleClause clause_undone columns))
@@ -411,7 +411,6 @@
                 (= -1 (.indexOf commands "where")) nil
                 ; other conditions
                 ))
-  (println "==================")
   (print "clause: ")
   (println clause)
   (def query (apply conj file columns))
