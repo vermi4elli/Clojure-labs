@@ -142,6 +142,7 @@
                                                 ")")))))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
+; select distinct row, col from map_zal-skl9 where row>=2 and row<=5 and col>=2 and col<=5;
 
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
@@ -164,7 +165,8 @@
 ; file is the result after 'select' query,
 ; clause has the next structure:
 ; [
-;   [ "number_of_column" ">=/not=" "bound" ]
+;   possible to have the first element as "and" or "or"
+;   [ "number_of_column" ">=/not=/<=/=" "bound" ]
 ; ]
 (defn where
   [file clause_undone]
@@ -183,6 +185,8 @@
 ; ========================================
 ; Implementation for query parsing
 
+; checks if the 'where' query needs to be validated
+; then returns the data after validating if needed
 (defn checkWhere
   [select_result commands clause]
   (println "==================CHECKWHERE==================")
@@ -232,6 +236,13 @@
     (printResult (vec (checkWhere (checkSelect query commands) commands clause)) columns)
     ))
 
+; parses the multi conditional clause to the format:
+; (e.g. from "mp_id>=21000 and mp_id<=21200"
+;       to [
+;           "and"
+;           [ "0" ">=" "21000"]
+;           [ "0" "<=" "21000"]
+;          ]
 (defn parseComplexClause
   [clause_undone clauseWord]
   ;(println "==================parseComplexClause==================")
@@ -260,7 +271,8 @@
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 
-
+; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
+;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
 (defn getSimpleClause
   [clause_undone columns]
   ;(println "==================getSimpleClause==================")
@@ -286,7 +298,7 @@
           (str (subs clause (+ (count operation) (clojure.string/index-of clause operation)))))
   )
 
-; parses the clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
+; parses the clause
 (defn getClause
   [clause_undone columns]
   ;(println "==================GETCLAUSE==================")
