@@ -131,9 +131,25 @@
 ; ========================================
 ; Implementation for WHERE query
 
+(defn isdigit?
+  [character]
+  (if (and (>= (int character) 48) (<= (int character) 57))
+    true
+    false))
+
 ; checks each line in
 (defn check_expression
-  [state data]
+  [state data_raw]
+  ;(println "==================CHECK_EXPRESSION==================")
+  (def data (if (isdigit? (first data_raw))
+              data_raw
+              (str "\"" (lower-case data_raw) "\"")))
+  ;(print "data: ")
+  ;(println data)
+  ;(print "type of data: ")
+  ;(println (type data))
+  ;(print "state: ")
+  ;(println state)
   (eval (read-string (clojure.string/join " " (vector
                                                 "("
                                                 (first state)
@@ -141,8 +157,12 @@
                                                 (nth state 1)
                                                 ")")))))
 
-; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
 ; select distinct row, col from map_zal-skl9 where row>=2 and row<=5 and col>=2 and col<=5;
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
+; select distinct mp_id, full_name from mp-posts_full where not mp_id<>21111;
+; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
+; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
 
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
@@ -237,6 +257,7 @@
     ))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
+; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or not full_name<>'Яцик Юлія Григорівна';
 
 ; parses the multi conditional clause to the format:
 ; (e.g. from "mp_id>=21000 and mp_id<=21200"
@@ -247,9 +268,9 @@
 ;          ]
 (defn parseComplexClause
   [clause_undone clauseWord]
-  (println "==================parseComplexClause==================")
-  (print "clause_undone: ")
-  (println clause_undone)
+  ;(println "==================parseComplexClause==================")
+  ;(print "clause_undone: ")
+  ;(println clause_undone)
   (loop [index 0
          clauseBonds [0]
          clauses []]
@@ -278,14 +299,14 @@
 ;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
 (defn getSimpleClause
   [clause_undone columns]
-  (println "==================getSimpleClause==================")
-  (print "clause_undone: ")
-  (println clause_undone)
+  ;(println "==================getSimpleClause==================")
+  ;(print "clause_undone: ")
+  ;(println clause_undone)
   (def clause (if (not= -1 (.indexOf clause_undone "not"))
                 (clojure.string/join " " (subvec clause_undone 1))
                 (clojure.string/join " " (subvec clause_undone 0))))
-  (print "clause: ")
-  (println clause)
+  ;(print "clause: ")
+  ;(println clause)
   ;
   (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
   (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
@@ -304,7 +325,7 @@
   (vector column
           finalOperation
           (if (and (starts-with? bound "'") (ends-with? bound "'"))
-            (clojure.string/replace bound "'" "")
+            (clojure.string/replace bound "'" "\"")
             bound))
   )
 
