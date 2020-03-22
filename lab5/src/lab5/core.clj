@@ -1,8 +1,8 @@
 (ns lab5.core
   (:gen-class)
-  (:use [clojure.data.csv]
-        [clojure.data.json]
-        [clojure.string]))
+  (:use [clojure.string]
+        [clojure.data.csv]
+        [clojure.data.json]))
 
 (require '[clojure.data.csv :as csv]
          '[clojure.java.io :as io]
@@ -133,9 +133,11 @@
 
 (defn isdigit?
   [character]
-  (if (and (>= (int character) 48) (<= (int character) 57))
-    true
-    false))
+  (if (nil? character)
+    false
+    (if (and (>= (int character) 48) (<= (int character) 57))
+      true
+      false)))
 
 ; checks each line in
 (defn check_expression
@@ -164,6 +166,7 @@
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
 ; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row, col;
+; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
 
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
@@ -206,7 +209,7 @@
 (defn orderBy
   [query orderClause]
   (if (not= nil orderClause)
-    (sort #(compare (first orderClause) (peek orderClause)) query)
+    (sort (eval (read-string orderClause)) query)
     query))
 
 ; ========================================
@@ -276,7 +279,7 @@
         orderClause (if (nth parsed_query 3)
                       (nth parsed_query 3)
                       nil)
-        columns (vec (rest (nth parsed_query 1)))]
+        columns (vec (rest query))]
     ;(print "commands: ")
     ;(println commands)
     ;(print "query: ")
@@ -359,8 +362,7 @@
           finalOperation
           (if (and (starts-with? bound "'") (ends-with? bound "'"))
             (clojure.string/replace bound "'" "\"")
-            bound))
-  )
+            bound)))
 
 ; parses the clause
 (defn getClause
@@ -410,6 +412,72 @@
       (recur (+ x 1)
              (conj result (name (nth (keys (first (choose_file (first file)))) x))))
       result)))
+
+; mp_id name asc
+; mp_id asc name desc
+(defn getOrderClause
+  [query_raw]
+  (println "==================GETORDERCLAUSE==================")
+  (def query_remade (loop [query []
+                    lastIndex 0
+                    index 0]
+               (if (< index (count query_raw))
+                 (cond
+                   (or (= "asc" (lower-case (nth query_raw index)))
+                       (= "desc" (lower-case (nth query_raw index))))
+                      (recur (conj query (apply vector (nth query_raw index) (subvec query_raw lastIndex index)))
+                             (+ 1 index)
+                             (+ 1 index))
+                   (= index (- (count query_raw) 1))
+                      (recur (conj query (apply vector "asc" (subvec query_raw lastIndex)))
+                             (+ 1 index)
+                             (+ 1 index))
+                   :else
+                      (recur query
+                             lastIndex
+                             (+ 1 index)))
+                 query)))
+  (print "query: ")
+  (println query_remade)
+  ;
+  (def firstVector
+    (join "" (vector
+           "["
+           (join " " (for [el query_remade]
+             (join (for [element (rest el)]
+                     (str
+                       "(:"
+                       element
+                       " "
+                       (if (= "desc" (first el))
+                         "%2"
+                         "%1")
+                       ")")))))
+           "]")))
+  (print "first: ")
+  (println firstVector)
+  (def secondVector
+    (join "" (vector
+               "["
+               (join " " (for [el query_remade]
+                           (join (for [element (rest el)]
+                                   (str
+                                     "(:"
+                                     element
+                                     " "
+                                     (if (= "desc" (first el))
+                                       "%1"
+                                       "%2")
+                                     ")")))))
+               "]")))
+  (print "second: ")
+  (println secondVector)
+  (str
+    "#(compare "
+    (read-string firstVector)
+    (read-string secondVector)
+    ")")
+  )
 
 ; parses the query in the format:
 ; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
@@ -471,7 +539,7 @@
                     columns)
                 (= -1 (.indexOf commands "where")) nil
                 ; other conditions
-                :else "not found"
+                :else nil
                 ))
   (print "clause: ")
   (println clause)
@@ -480,18 +548,14 @@
   (println query)
   (def orderClause (cond
                      (not= -1 (.indexOf commands "order by"))
-                        (subvec query_raw (+ 1 (.indexOf query_raw "order by")))
+                        (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
                      :else nil))
-  (print "orderCLause: ")
+  (print "orderClause: ")
   (println orderClause)
   (vector commands query clause orderClause))
 
 ; ========================================
 ; Implementation of the ORDER BY fuction
-
-(defn getOrderClause
-  [clause]
-  ())
 
 ; the sorting algorithm we'll be using to sort everything
 (defn quicksort [coll]
@@ -509,7 +573,7 @@
   (println "Write your commands here!")
   (print "~> ")
   (flush)
-  (def commands_list ["select" "from" "where" "distinct" "order by" "asc" "desc"])
+  (def commands_list ["select" "from" "where" "distinct" "order by"])
   (loop [input (read-line)]
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main))
@@ -553,8 +617,10 @@
                                      (keyword column))
                               )) data)
 
-(sort #(compare [(:mp_id %2) (:name %1)]
-                [(:mp_id %1) (:name %2)]) data)
+(sort (eval (read-string "#(compare [(:mp_id %2) (:name %1)][(:mp_id %1) (:name %2)])")) data)
+
+(vector (read-string "[(:mp_id %2) (:name %1)]")
+        (read-string "[(:mp_id %1) (:name %2)]"))
 
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
