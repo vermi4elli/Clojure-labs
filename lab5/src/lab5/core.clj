@@ -166,6 +166,8 @@
 (defn check_true
   [clause clauseWord data]
   ;(println "==================CHECK_TRUE==================")
+  ;(print "clause: ")
+  ;(println clause)
   (if (= clauseWord "and")
     (not (contains? (set (for [state clause]
                     (when (= false
@@ -328,10 +330,19 @@
 ; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 ;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
 (defn getSimpleClause
-  [clause_undone columns]
+  [clause_undone columns_raw]
   ;(println "==================getSimpleClause==================")
   ;(print "clause_undone: ")
   ;(println clause_undone)
+  (def columns (vec (for [element columns_raw]
+                 (if (not= "" (first element))
+                   (str (first element)
+                        "("
+                        (peek element)
+                        ")")
+                   (peek element)))))
+  ;(print "columns: ")
+  ;(println columns)
   (def clause (if (not= -1 (.indexOf clause_undone "not"))
                 (clojure.string/join " " (subvec clause_undone 1))
                 (clojure.string/join " " (subvec clause_undone 0))))
@@ -379,9 +390,9 @@
   (cond
     (nil? clauseWord) (vector (getSimpleClause clause_undone columns))
     (= "and" clauseWord) (apply vector "and" (for [element (parseComplexClause clause_undone clauseWord)]
-                                   (getSimpleClause element columns)))
+                                               (getSimpleClause element columns)))
     (= "or" clauseWord) (apply vector "or" (for [element (parseComplexClause clause_undone clauseWord)]
-                                        (getSimpleClause element columns)))
+                                             (getSimpleClause element columns)))
     )
   )
 
@@ -393,19 +404,6 @@
                      true
                      false))
            query))
-
-; gets the vector of all 'columns' from the file we're parsing
-(defn getColumnsFromStar
-  [file]
-  ;(println "==================GETCOLUMNSFROMSTAR==================")
-  ;(print "file: ")
-  ;(println file)
-  (loop [x 0
-         result []]
-    (if (< x (count (keys (first (choose_file (first file))))))
-      (recur (+ x 1)
-             (conj result (name (nth (keys (first (choose_file (first file)))) x))))
-      result)))
 
 ; mp_id name asc
 ; mp_id asc name desc
@@ -473,19 +471,70 @@
     ")")
   )
 
+; select distinct * from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
+; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
+
+
+; gets the vector of all 'columns' from the file we're parsing
+(defn getColumnsFromStar
+  [file]
+  ;(println "==================GETCOLUMNSFROMSTAR==================")
+  ;(print "file: ")
+  ;(println file)
+  (def columns (loop [x 0
+                      result []]
+                 (if (< x (count (keys (first (choose_file (first file))))))
+                   (recur (+ x 1)
+                          (conj result (name (nth (keys (first (choose_file (first file)))) x))))
+                   result)))
+  ;(print "columns: ")
+  ;(println columns)
+  ;(println "==================")
+  (vec (for [el columns]
+    (vector "" el))))
+
+; parses the columns in a format:
+; [
+;   the first element of the vector is the function if we are using any
+;   for that column
+;   ["count" "column1"]
+;   ["" "column2"]
+;   ["sum" "column3"]
+;   ...
+; ]
+(defn checkFunctions
+  [query file]
+  (def query_commands ["count" "sum" "min"])
+  (def final_query (apply vector (for [column query]
+                    (cond
+                      (= "*" column)
+                        (getColumnsFromStar file)
+                      (and (not (nil? (clojure.string/index-of column "(")))
+                           (not (nil? (clojure.string/index-of column ")"))))
+                        (clojure.string/split column #"[()]")
+                      :else
+                        (vector "" column)))))
+  ;(print "final query: ")
+  ;(println final_query)
+  ;(println "==================")
+  (if (<= (count final_query) 1)
+    (first final_query)
+    final_query)
+  )
+
 ; parses the columns and functions
 (defn getColumns
   [query_raw commands file]
-  (def query (cond ))
-  (cond
-    (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
-    (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
-      (getColumnsFromStar file)
-      (subvec query_raw 1 (.indexOf query_raw "from")))
-    (= (clojure.string/lower-case (nth query_raw 1)) "distinct")
-    (if (= (clojure.string/lower-case (nth query_raw 2)) "*")
-      (getColumnsFromStar file)
-      (subvec query_raw 2 (.indexOf query_raw "from")))))
+  ;(println "==================GETCOLUMNS==================")
+  (def query (subvec query_raw
+                     (if (not= -1 (.indexOf commands "distinct"))
+                       2
+                       1)
+                     (.indexOf query_raw "from")))
+  ;(print "query: ")
+  ;(println query)
+  (checkFunctions query file)
+  )
 
 ; checks if the input equals 'exit', if so exits with the code 0
 ; else, it changes the separate commands 'order' 'by' to 'order by'
@@ -506,6 +555,8 @@
 ;               ["index_of_column" ">=/not=" "bound"]
 ;               ...
 ;             ]
+; orderClause: "#(compare [(:row %1) (:col %2)]
+;                         [(:row %2) (:col %1)])"
 ; ]
 (defn parseQuery
   [query_raw_raw commands_list]
