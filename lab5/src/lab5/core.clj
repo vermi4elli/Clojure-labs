@@ -109,9 +109,6 @@
 ; ========================================
 ; Implementation for SELECT query
 
-(def query
-  ["plenary_register_mps-skl9" "date_agenda" "presence"])
-
 (defn select
   [query]
   (let [[file & columns] query]
@@ -120,9 +117,6 @@
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
-
-(def query
-  ["mp-posts_full" "mp_id"])
 
 (defn select_distinct
   [query]
@@ -417,7 +411,7 @@
 ; mp_id asc name desc
 (defn getOrderClause
   [query_raw]
-  (println "==================GETORDERCLAUSE==================")
+  ;(println "==================GETORDERCLAUSE==================")
   (def query_remade (loop [query []
                     lastIndex 0
                     index 0]
@@ -437,8 +431,8 @@
                              lastIndex
                              (+ 1 index)))
                  query)))
-  (print "query: ")
-  (println query_remade)
+  ;(print "query: ")
+  ;(println query_remade)
   ;
   (def firstVector
     (join "" (vector
@@ -454,8 +448,8 @@
                          "%1")
                        ")")))))
            "]")))
-  (print "first: ")
-  (println firstVector)
+  ;(print "first: ")
+  ;(println firstVector)
   (def secondVector
     (join "" (vector
                "["
@@ -470,14 +464,35 @@
                                        "%2")
                                      ")")))))
                "]")))
-  (print "second: ")
-  (println secondVector)
+  ;(print "second: ")
+  ;(println secondVector)
   (str
     "#(compare "
     (read-string firstVector)
     (read-string secondVector)
     ")")
   )
+
+(defn getColumns
+  [query_raw commands file]
+  (cond
+    (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
+    (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
+      (getColumnsFromStar file)
+      (subvec query_raw 1 (.indexOf query_raw "from")))
+    (= (clojure.string/lower-case (nth query_raw 1)) "distinct")
+    (if (= (clojure.string/lower-case (nth query_raw 2)) "*")
+      (getColumnsFromStar file)
+      (subvec query_raw 2 (.indexOf query_raw "from")))))
+
+(defn processQuery
+  [query_raw_raw]
+  (if (= "exit" (first query_raw_raw))
+    (System/exit 0)
+    (if (not= -1 (.indexOf query_raw_raw "order"))
+      (let [raw (assoc query_raw_raw (.indexOf query_raw_raw "order") "order by")]
+        (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
+      query_raw_raw)))
 
 ; parses the query in the format:
 ; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
@@ -491,15 +506,13 @@
 (defn parseQuery
   [query_raw_raw commands_list]
   (println "==================PARSEQUERY==================")
-  (def query_raw (if (not= -1 (.indexOf query_raw_raw "order"))
-                   (let [raw (assoc query_raw_raw (.indexOf query_raw_raw "order") "order by")]
-                     (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
-                   query_raw_raw))
+  (def query_raw (processQuery query_raw_raw))
   (print "query_raw: ")
   (println query_raw)
   (def commands (getCommands query_raw commands_list))
   (print "commands: ")
   (println commands)
+  (print "The amount of arguments in commands: ")
   (println (count commands))
   (def file (cond
               (not= -1 (.indexOf commands "where"))
@@ -513,15 +526,7 @@
               (= -1 (.indexOf commands "where")) (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
   (print "file: ")
   (println file)
-  (def columns (cond
-                 (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
-                 (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
-                   (getColumnsFromStar file)
-                   (subvec query_raw 1 (.indexOf query_raw "from")))
-                 (= (clojure.string/lower-case (nth query_raw 1)) "distinct")
-                 (if (= (clojure.string/lower-case (nth query_raw 2)) "*")
-                   (getColumnsFromStar file)
-                   (subvec query_raw 2 (.indexOf query_raw "from")))))
+  (def columns (getColumns query_raw commands file))
   (print "columns: ")
   (println columns)
   (def clause (cond
@@ -578,50 +583,3 @@
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main))
   )
-
-; temp data for testing
-(def query
-  ["plenary_register_mps-skl9" "date_agenda" "presence" "id_event"])
-
-; temp data for testing
-(def clause
-  [
-    ; where '1' stands for an index of "presence" in query
-    "OR"
-    ["1" ">=" "370"]
-    ["2" ">=" "50"]
-  ])
-
-(def data [{:mp_id 12 :name "John"}
-           {:mp_id 12 :name "Jack"}
-           {:mp_id 12 :name "Chris"}
-           {:mp_id 12 :name "Zetta"}
-           {:mp_id 12 :name "Alpha"}
-           {:mp_id 1 :name "Bruce"}
-           {:mp_id 7 :name "King"}
-           {:mp_id 47 :name "King"}
-           {:mp_id 71 :name "King"}
-           {:mp_id 17 :name "King"}
-           {:mp_id 6 :name "King"}
-           {:mp_id 9 :name "King"}
-           ])
-
-(def tempColumns [["mp_id" "asc"] ["name" "desc"]])
-
-(loop [tempColumns
-       data
-       index 0]
-  (if (= index ())))
-
-(sort-by (apply juxt (flatten (for [column tempColumns]
-                                     (keyword column))
-                              )) data)
-
-(sort (eval (read-string "#(compare [(:mp_id %2) (:name %1)][(:mp_id %1) (:name %2)])")) data)
-
-(vector (read-string "[(:mp_id %2) (:name %1)]")
-        (read-string "[(:mp_id %1) (:name %2)]"))
-
-
-; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
-; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100 and not mp_id>=21200;
