@@ -473,8 +473,10 @@
     ")")
   )
 
+; parses the columns and functions
 (defn getColumns
   [query_raw commands file]
+  (def query (cond ))
   (cond
     (not= (clojure.string/lower-case (nth query_raw 1)) "distinct")
     (if (= (clojure.string/lower-case (nth query_raw 1)) "*")
@@ -485,6 +487,8 @@
       (getColumnsFromStar file)
       (subvec query_raw 2 (.indexOf query_raw "from")))))
 
+; checks if the input equals 'exit', if so exits with the code 0
+; else, it changes the separate commands 'order' 'by' to 'order by'
 (defn processQuery
   [query_raw_raw]
   (if (= "exit" (first query_raw_raw))
