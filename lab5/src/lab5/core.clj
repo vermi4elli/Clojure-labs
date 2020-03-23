@@ -2,7 +2,8 @@
   (:gen-class)
   (:use [clojure.string]
         [clojure.data.csv]
-        [clojure.data.json]))
+        [clojure.data.json])
+  (:import (clojure.lang SeqEnumeration)))
 
 (require '[clojure.data.csv :as csv]
          '[clojure.java.io :as io]
@@ -109,6 +110,64 @@
 ; ========================================
 ; Implementation for SELECT query
 
+(defn isdigit?
+  [character]
+  (if (nil? character)
+    false
+    (if (and (>= (int character) 48) (<= (int character) 57))
+      true
+      false)))
+
+(defn Min
+  [file columns col_index]
+  (def column (for [line file]
+                (nth line col_index)))
+  (print "column: ")
+  (println column)
+  (loop [index 0
+         limit (count column)
+         is_string (if (isdigit? (ffirst column))
+                     false
+                     true)
+         min (if (= true is_string)
+               (first column)
+               (read-string (first column))
+               )]
+    (if (< index limit)
+      (recur (+' 1 index)
+             limit
+             is_string
+             (if (= true is_string)
+               (if (< (count (nth column index)) (count min))
+                 (nth column index)
+                 min)
+               (if (< (read-string (nth column index)) min)
+                 (read-string (nth column index))
+                 min)))
+      (vector (str min))))
+  )
+
+(defn Sum
+  [file col_index]
+  (println "===============SUM==============")
+  (print "file: ")
+  (println file)
+  (print "col index: ")
+  (println col_index)
+  (print "")
+  (if (isdigit? (first (nth (first file) col_index)))
+    (loop [index 0
+           limit (count file)
+           sum 0
+           col col_index]
+      (if (< index limit)
+        (recur (+' 1 index)
+               limit
+               (+' (eval (read-string (nth (nth file index) col))) sum)
+               col)
+        (vector (str sum))))
+    (throw (Exception. "The values in the 'SUM' function are not digits!"))))
+
 (defn Count
   [file column]
   (print "type of a count: ")
@@ -116,14 +175,14 @@
   (vector (str (count file))))
 
 (defn callFunction
-  [file column]
+  [file column index columns]
   ;(println "CALLFUNCTION")
   ;(print "The result of a count: ")
   ;(println (Count file (peek column)))
   (case (first column)
     "count" (Count file (peek column))
-    ;"sum" (Sum file column)
-    ;"min" (Min file solumn)
+    "sum" (Sum file index)
+    "min" (Min file columns index)
     ))
 
 ; select count(mp_id) from mp-posts_full;
@@ -137,10 +196,10 @@
   (println columns)
   (println (for [column columns]
              (when (not= "" (first column))
-               (callFunction file column))))
+               (callFunction file column (.indexOf columns column) columns))))
   (for [column columns]
     (when (not= "" (first column))
-      (callFunction file column))))
+      (callFunction file column (.indexOf columns column) columns))))
 
 (defn select
   [query commands]
@@ -183,14 +242,6 @@
 
 ; ========================================
 ; Implementation for WHERE query
-
-(defn isdigit?
-  [character]
-  (if (nil? character)
-    false
-    (if (and (>= (int character) 48) (<= (int character) 57))
-      true
-      false)))
 
 ; checks each line in
 (defn check_expression
