@@ -389,24 +389,17 @@
 ; ]
 (defn where
   [file clause_undone]
-  (println "===============WHERE==============")
-  (print "file: ")
-  (println file)
-  (print "clause_undone: ")
-  (println clause_undone)
-  (def clauseWord (cond
-                    (not= -1 (.indexOf clause_undone "and")) "and"
-                    (not= -1 (.indexOf clause_undone "or")) "or"
-                    :else nil
-                    ))
-  (def clause (if (not= nil clauseWord)
-                (vec (rest clause_undone))
-                clause_undone))
-  (println "clause: ")
-  (println clause)
-  (remove nil? (vec
-                 (for [line file]
-                   (when (check_true clause clauseWord line) (vec line))))))
+  (let [clauseWord (cond
+                     (not= -1 (.indexOf clause_undone "and")) "and"
+                     (not= -1 (.indexOf clause_undone "or")) "or"
+                     :else nil
+                     )
+        clause (if (not= nil clauseWord)
+                 (vec (rest clause_undone))
+                 clause_undone)]
+    (remove nil? (vec
+                   (for [line file]
+                     (when (check_true clause clauseWord line) (vec line)))))))
 
 (defn orderBy
   [query orderClause]
@@ -420,17 +413,10 @@
 ; checks if the 'where' query needs to be validated
 ; then returns the data after validating if needed
 (defn checkWhere
-  [select_result commands clause]
-  (println "==================CHECKWHERE==================")
-  (print "commands: ")
-  (println commands)
-  (print "query: ")
-  (println select_result)
-  (print "clause: ")
-  (println clause)
+  [selected_data commands clause]
   (if (not= -1 (.indexOf commands "where"))
-    (where select_result clause)
-    select_result))
+    (where selected_data clause)
+    selected_data))
 
 (defn checkSelect
   [query commands]
