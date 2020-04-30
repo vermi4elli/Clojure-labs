@@ -164,10 +164,10 @@
 ;   :fullname
 ;   :year
 ;   :guid
-;   :format
 ;   :decl_url
 (def mps-declarations_rada
-  (loadFile "../data files/mps-declarations_rada.json"))
+  (vec (for [elem (loadFile "../data files/mps-declarations_rada.json")]
+    (dissoc elem :format))))
 
 ; Returns the file you want to see
 (defn choose_file
@@ -711,14 +711,11 @@
 (defn getColumnsFromStar
   [file]
   ;(println "==================GETCOLUMNSFROMSTAR==================")
-  (let [columns (loop [x 0
-                               result []]
-                          (if (< x (count (keys (first (choose_file (first file))))))
-                            (recur (+ x 1)
-                                   (conj result (name (nth (keys (first (choose_file (first file)))) x))))
-                            result))]
-    (vec (for [el columns]
-           (vector "" el)))))
+  (let [columns_raw (keys (first (choose_file file)))
+        columns (for [elem columns_raw]
+                  {:column (name elem)
+                   :function nil
+                   :file file})]))
 
 
 ; select distinct mp_id, full_name from mp-posts_full order by mp_id;
@@ -732,13 +729,13 @@
 ;   ["sum" "column3"]
 ;   ...
 ; ]
-(defn checkFunctions
-  [query file commands]
-  (let [query_commands ["count" "sum" "min"]
-        final_query (apply vector (vec (for [column query]
+(defn processColumns
+  [columns file commands]
+  (let [columnsFunctions ["count" "sum" "min"]
+        final_query (apply vector (vec (for [column columns]
                                          (cond
-                                           ; first condition
-                                           (= "*" column)
+                                           ; first condition - star
+                                           (= "*" (get column :column))
                                            ; first action
                                            (getColumnsFromStar file)
                                            ; second condition
@@ -767,7 +764,14 @@
 
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
-; parses the columns and functions
+; parses the columns and functions into
+; (
+;   {
+;     :column
+;     :function
+;     :file
+;   }
+; )
 (defn getColumns
   [query_raw commands file]
   (println "==================GETCOLUMNS==================")
@@ -776,7 +780,32 @@
                         2
                         1)
                       (.indexOf query_raw "from"))]
-    (checkFunctions query file commands)))
+    (processColumns (apply vector (flatten (for [col columns]
+      (let [indexLeft (index-of col "(")
+            indexRight (index-of col ")")
+            indexDot (index-of col ".")
+            column (cond
+                     (some? indexLeft) (subs col (+ 1 indexLeft) indexRight)
+                     (some? indexDot) (subs col (+ 1 indexDot))
+                     :else col)
+            file_temp (if (some? indexDot)
+                        (subs col 0 indexDot)
+                        file)
+            function (if (some? indexLeft)
+                       (if (some? indexDot)
+                         (subs col (+ 1 indexDot) indexLeft)
+                         (subs col 0 indexLeft))
+                       nil)]
+        (if (= "*" column)
+          (getColumnsFromStar file_temp)
+          {:column column
+           :function function
+           :file file_temp})
+        )
+      ))) file commands)))
+
+(def test_columns
+  ["mp_id" "count(mp_id)" "mp-posts_full.mp_id"])
 
 ; replaces '_type_' 'join' strings in the query to one '_type_ join' string
 (defn checkJoinFunction
