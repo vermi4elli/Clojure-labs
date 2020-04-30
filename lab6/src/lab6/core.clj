@@ -305,7 +305,9 @@
                 select_functions (callFunctions columns_functions_vector)
                 select_usual (for [line (choose_file file)]
                                (select-keys line columns_usual_vector))]
-            columns_functions_vector
+            (if (empty? select_functions)
+              select_usual
+              (merge (first select_usual) select_functions))
             )))
 ;do changes to prepare data
 
@@ -313,7 +315,7 @@
   {:file "mp-posts_full"
    :columns [
              {:column "mp_id"
-              :function "count"
+              :function nil
               :file "mp-posts_full"}
              {:column "full_name"
               :function nil
