@@ -854,14 +854,23 @@
 
 (defn inner-join
   [field1 field2 table1 table2]
-  (remove nil? (for [i (range 0 (if (< (count table1) (count table2))
-                                  (count table1)
-                                  (count table2)))]
-                 (if (= (get (nth table1 i) (keyword field1)) (get (nth table2 i) (keyword field2)))
-                   (merge (nth table1 i) (nth table2 i))
-                   nil
-                   )
-    )))
+  (remove nil? (let [table (if (> (count table1) (count table2))
+                             table1
+                             table2)
+                     other_table (if (<= (count table1) (count table2))
+                                   table1
+                                   table2)
+                     table_count (count table)]
+                 (for [i (range 0 table_count)]
+                   (let [elem1 (nth table i)
+                         elem2 (remove nil? (for [elem other_table]
+                                              (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
+                                                elem
+                                                nil)))]
+                     (if (not= 0 (count elem2))
+                       (merge (nth table i) (first elem2))
+                       nil)))
+                 )))
 
 (def test1
   [{:id 2
