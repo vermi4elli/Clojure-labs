@@ -192,75 +192,64 @@
       false)))
 
 (defn Min
-  [file columns col_index]
-  (def column (for [line file]
-                (nth line col_index)))
-  (print "column: ")
-  (println column)
-  (loop [index 0
-         limit (count column)
-         is_string (if (isdigit? (ffirst column))
-                     false
-                     true)
-         min (if (= true is_string)
-               (first column)
-               (read-string (first column))
-               )]
-    (if (< index limit)
-      (recur (+' 1 index)
-             limit
-             is_string
-             (if (= true is_string)
-               (if (< (count (nth column index)) (count min))
-                 (nth column index)
-                 min)
-               (if (< (read-string (nth column index)) min)
-                 (read-string (nth column index))
-                 min)))
-      (vector (str min))))
-  )
-
-(defn Sum
-  [file col_index]
-  (println "===============SUM==============")
-  (print "file: ")
-  (println file)
-  (print "col index: ")
-  (println col_index)
-  (print "")
-  (if (isdigit? (first (nth (first file) col_index)))
+  [file column]
+  (let [file_column (for [line (choose_file file)]
+                      (get line (keyword column)))
+        limit (count file_column)
+        is_string (= (type (first file_column)) java.lang.String)]
     (loop [index 0
-           limit (count file)
-           sum 0
-           col col_index]
+           min (first file_column)]
       (if (< index limit)
         (recur (+' 1 index)
-               limit
-               (+' (eval (read-string (nth (nth file index) col))) sum)
-               col)
-        (vector (str sum))))
-    (throw (Exception. "The values in the 'SUM' function are not digits!"))))
+               (if is_string
+                 (if (< (count (nth file_column index)) (count min))
+                   (nth file_column index)
+                   min)
+                 (if (< (nth file_column index) min)
+                   (nth file_column index)
+                   min)))
+        min))))
+
+(defn Sum
+  [file column]
+  (let [file_column (for [line (choose_file file)]
+                      (get line (keyword column)))
+        limit (count file_column)]
+    (if (not= java.lang.Long (type (get (first file_column) (keyword column))))
+      (loop [index 0
+             sum 0]
+        (if (< index limit)
+          (recur (+' 1 index)
+                 (+' (nth file_column index) sum))
+          sum))
+      (throw (Exception. "The values in the 'SUM' function are not digits!")))))
 
 (defn Count
   [file column]
-  (vector (str (count file))))
+  (let [file_column (for [line (choose_file file)]
+                      (get line (keyword column)))]
+    (count (remove nil? file_column)))
+  )
 
 (defn callFunction
-  [file column index columns]
-  (println "CALLFUNCTION")
-  (case (first column)
-    "count" (Count file (peek column))
-    "sum" (Sum file index)
-    "min" (Min file columns index)
-    ))
+  [column_raw]
+  (let [file (get column_raw :file)
+        column (get column_raw :column)]
+    (case (get column_raw :function)
+      "count" (Count file column)
+      "sum" (Sum file column)
+      "min" (Min file column)
+    )))
 
 ; select count(mp_id) from mp-posts_full;
 
 (defn callFunctions
   [columns]
-  (println "==============CALLFUNCTIONS=============")
-
-  )
+  (apply merge (for [column columns]
+                 (assoc {} (keyword (str (get column :function)
+                                         "("
+                                         (get column :column)
+                                         ")")) (callFunction column)))))
 
 (defn full-outer-join
   [field1 field2 table1 table2])
@@ -305,18 +294,18 @@
     (full-outer-join query "" "" "")
     :else (let [columns (get query :columns)
                 file (get query :file)
-                columns_usual_vector (remove nil? (for [column columns]
-                                 (if (nil? (get column :function))
-                                   (keyword (get column :column))
-                                   nil)))
-                columns_functions_vector (remove nil? (for [column columns]
+                columns_usual_vector (vec (remove nil? (for [column columns]
+                                                    (if (nil? (get column :function))
+                                                      (keyword (get column :column))
+                                                      nil))))
+                columns_functions_vector (vec (remove nil? (for [column columns]
                                                         (if (some? (get column :function))
                                                           column
-                                                          nil)))
-                ;select_functions (callFunctions columns_functions_vector)
+                                                          nil))))
+                select_functions (callFunctions columns_functions_vector)
                 select_usual (for [line (choose_file file)]
                                (select-keys line columns_usual_vector))]
-            select_usual
+            columns_functions_vector
             )))
 ;do changes to prepare data
 
@@ -324,9 +313,9 @@
   {:file "mp-posts_full"
    :columns [
              {:column "mp_id"
-              :function nil
+              :function "count"
               :file "mp-posts_full"}
-             {:column "fullname"
+             {:column "full_name"
               :function nil
               :file "mp-posts_full"}
              ]})
