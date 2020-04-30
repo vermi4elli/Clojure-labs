@@ -266,7 +266,7 @@
 
 (defn select
   [query commands]
-  (println "================SELECT===============")
+  ;(println "================SELECT===============")
   (cond
     ;first condition
     (and (some #(= "inner join" %) commands)
@@ -295,9 +295,12 @@
                 select_functions (callFunctions columns_functions_vector)
                 select_usual (for [line (choose_file file)]
                                (select-keys line columns_usual_vector))]
-            (if (empty? select_functions)
-              select_usual
-              (merge (first select_usual) select_functions))
+            (print "select_usual: ")
+            (println select_usual)
+            (cond
+              (empty? select_functions) select_usual
+              (empty? select_usual) (vector select_functions)
+              :else (apply merge (first select_usual) (vector select_functions)))
             )))
 
 ; ========================================
@@ -319,15 +322,19 @@
     (eval (read-string (str
                          "("
                          (get clause :operation)
+                         " "
                          data
+                         " "
                          (get clause :bound)
                          ")")))))
 
 ; select count(mp_id) from mp-posts_full;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
 ; select distinct row, col from map_zal-skl9 where row>=2 and row<=5;
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id<>21111;
+; select distinct mp_id from mp-posts_full where not mp_id<>21111;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
 ; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row, col;
@@ -363,8 +370,13 @@
 ; ]
 (defn where
   [selected_data clause_undone]
+  (println "======WHERE======")
   (let [clauseWord (get clause_undone :clauseWord)
         clause (get clause_undone :clause)]
+    (print "clause: ")
+    (println clause)
+    (print "clauseWord: ")
+    (println clauseWord)
     (remove nil? (for [element selected_data]
                      (when (check_true clause clauseWord element) element)))))
 
@@ -381,6 +393,8 @@
 ; then returns the data after validating if needed
 (defn checkWhere
   [selected_data commands clause]
+  (print "selected_data: ")
+  (println selected_data)
   (if (not= -1 (.indexOf commands "where"))
     (where selected_data clause)
     selected_data))
@@ -394,35 +408,26 @@
 
 (defn printResult
   [query]
+  (print "query: ")
+  (println query)
   (clojure.pprint/print-table query))
 
 ; select count(mp_id) from mp-posts_full;
 ; select count(mp_id), count(full_name) from mp-posts_full;
 ; select distinct mp_id from mps-declarations_rada;
 ; select distinct mp_id from mps-declarations_rada;
-
-; turns the stringed numbers into normal numbers, then
-; makes a map out of the result data to feed it into order by and, then, printResult
-
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
 
 ; starts the execution of the correct function
 (defn executeQuery
   [parsed_query]
-  (println "==================EXECUTEQUERY==================")
-  (let [commands (nth parsed_query 0)
-        query (nth parsed_query 1)
-        file (nth query 0)
-        clause (if (nth parsed_query 2)
-                 (nth parsed_query 2)
-                 nil)
-        orderClause (if (nth parsed_query 3)
-                      (nth parsed_query 3)
-                      nil)
-        columns (vec (rest query))]
-    (printResult (orderBy (checkWhere (checkSelect query commands) commands clause) orderClause))
-    ))
+  ;(println "==================EXECUTEQUERY==================")
+  (let [commands (get parsed_query :commands)
+        query (get parsed_query :query)
+        clause (get parsed_query :clause)
+        orderClause (get parsed_query :orderClause)]
+    (printResult (checkWhere (checkSelect query commands) commands clause))))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or not full_name<>'Яцик Юлія Григорівна';
@@ -480,7 +485,9 @@
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone columns_raw]
-  (println "==================getSimpleClause==================")
+  ;(println "==================getSimpleClause==================")
+  ;(println clause_undone)
+  ;(println columns_raw)
   (let [columns (vec (for [element columns_raw]
                        (if (nil? (get element :function))
                          (get element :column)
@@ -495,7 +502,7 @@
         operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="}
         operation (first (remove nil? (for [element (keys operationsTranslations)]
                                         (if-not (nil? (clojure.string/index-of clause element)) element))))
-        column (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
+        column (subs clause 0 (clojure.string/index-of clause operation))
         finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
                                                      (get oppositeOperations operation)
                                                      operation))
@@ -509,7 +516,7 @@
 ; parses the clause
 (defn getClause
   [clause_undone columns]
-  (println "==================GETCLAUSE==================")
+  ;(println "==================GETCLAUSE==================")
   (let [clauseWord (cond
                      (not= -1 (.indexOf clause_undone "and"))
                      "and"
@@ -518,10 +525,10 @@
                      :else nil)]
     (cond
       (nil? clauseWord) {:clauseWord nil :clause (vector (getSimpleClause clause_undone columns))}
-      (= "and" clauseWord) (:clauseWord "and" :clause (for [element (parseComplexClause clause_undone clauseWord)]
-                                                        (getSimpleClause element columns)))
-      (= "or" clauseWord) (:clauseWord "or" :clause (for [element (parseComplexClause clause_undone clauseWord)]
-                                                      (getSimpleClause element columns)))
+      (= "and" clauseWord) {:clauseWord "and" :clause (for [element (parseComplexClause clause_undone clauseWord)]
+                                                        (getSimpleClause element columns))}
+      (= "or" clauseWord) {:clauseWord "or" :clause (for [element (parseComplexClause clause_undone clauseWord)]
+                                                      (getSimpleClause element columns))}
       )))
 
 ; mp_id name asc
@@ -534,12 +541,16 @@
                             index 0]
                        (if (< index (count query_raw))
                          (cond
+                           ; first condition
                            (or (= "asc" (lower-case (nth query_raw index)))
                                (= "desc" (lower-case (nth query_raw index))))
+                           ; first action
                            (recur (conj query (apply vector (nth query_raw index) (subvec query_raw lastIndex index)))
                                   (+ 1 index)
                                   (+ 1 index))
+                           ; second condition
                            (= index (- (count query_raw) 1))
+                           ; second action
                            (recur (conj query (apply vector "asc" (subvec query_raw lastIndex)))
                                   (+ 1 index)
                                   (+ 1 index))
@@ -574,6 +585,10 @@
                                                         "%2")
                                                       ")")))))
                                 "]"))]
+    ;(print "firstVector: ")
+    ;(print firstVector)
+    ;(print "secondVector: ")
+    ;(print secondVector)
     (str
       "#(compare "
       (read-string firstVector)
@@ -696,16 +711,32 @@
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
 ; parses the query in the format:
-; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
-;   query:    ["file_name" "column1" "column2" ...]
-;   clause:   [
-;               here we put either "and" or "or" or nothing if there is only one condition
-;               ["index_of_column" ">=/not=" "bound"]
-;               ...
-;             ]
-; orderClause: "#(compare [(:col1 %1) (:col2 %2)]
-;                         [(:col1 %2) (:col2 %1)])"
-; ]
+; { :commands ["command1 (e.g. select)" "command2 (e.g. from)" ...]
+;   :query     {:file "file_name"
+;               :query [
+;                         :column "column1"
+;                         :function "function1"
+;                         :file "file1"
+;                      ]
+;               }
+;   :clause   {
+;             :clauseWord "word"
+;             :clause [
+;                       {
+;                         :column "mp_id"
+;                         :operation ">="
+;                         :bound "21000"
+;                       }
+;                       {
+;                         :column "mp_id"
+;                         :operation "<="
+;                         :bound "21000"
+;                       }
+;                     ]
+;              }
+;   :orderClause "#(compare [(:col1 %1) (:col2 %2)]
+;                           [(:col1 %2) (:col2 %1)])"
+; }
 (defn parseQuery
   [query_raw_raw commands_list]
   (let [query_raw (joinSeparateCommands query_raw_raw)
@@ -742,7 +773,17 @@
                       (not= -1 (.indexOf commands "order by"))
                       (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
                       :else nil)]
-    (vector commands query clause orderClause)))
+    (print "commands: ")
+    (println commands)
+    (print "query: ")
+    (println query)
+    (print "clause: ")
+    (print "orderClause: ")
+    (println orderClause)
+    {:commands commands
+     :query query
+     :clause clause
+     :orderClause orderClause}))
 
 
 (defn -main [& args]
