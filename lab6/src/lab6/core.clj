@@ -711,76 +711,44 @@
 (defn getColumnsFromStar
   [file]
   ;(println "==================GETCOLUMNSFROMSTAR==================")
-  (let [columns_raw (keys (first (choose_file file)))
-        columns (for [elem columns_raw]
-                  {:column (name elem)
-                   :function nil
-                   :file file})]))
+  (let [columns_raw (keys (first (choose_file file)))]
+    (for [elem columns_raw]
+      {:column (name elem)
+       :function nil
+       :file file})))
 
 
 ; select distinct mp_id, full_name from mp-posts_full order by mp_id;
 
-; parses the columns in a format:
-; [
-;   the first element of the vector is the function if we are using any
-;   for that column
-;   ["count" "column1"]
-;   ["" "column2"]
-;   ["sum" "column3"]
-;   ...
-; ]
+; checks if the functions in columns are known
 (defn processColumns
-  [columns file commands]
-  (let [columnsFunctions ["count" "sum" "min"]
-        final_query (apply vector (vec (for [column columns]
-                                         (cond
-                                           ; first condition - star
-                                           (= "*" (get column :column))
-                                           ; first action
-                                           (getColumnsFromStar file)
-                                           ; second condition
-                                           (and (not (nil? (clojure.string/index-of column "(")))
-                                                (not (nil? (clojure.string/index-of column ")"))))
-                                           ; second action
-                                           (clojure.string/split column #"[()]")
-                                           ; else condition and action
-                                           :else (vector "" column)))))
-        result (if (= clojure.lang.PersistentVector (type (first (first final_query))))
-                 (first final_query)
-                 final_query)]
-    (cond
-      (and
-        (= -1 (.indexOf commands "group by"))
-        (not= 0 (count (remove nil? (for [column result]
-                                      (if (not= "" (first column))
-                                        (first column)
-                                        nil)))))
-        (not= (count result) (count (remove nil? (for [column result]
-                                                   (if (not= "" (first column))
-                                                     (first column)
-                                                     nil))))))
-      (throw (Exception. "The amount of the functions not equal to the total amount of columns!"))
-      :else result)))
+  [columns]
+  (let [columnsFunctions ["count" "sum" "min" nil]]
+    (for [column columns]
+      (let [function (get column :function)]
+        (if (nil? (some #(= function %) columnsFunctions))
+          (throw (Exception. (str "The function " function " is not known!")))
+          column)))))
 
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
 ; parses the columns and functions into
 ; (
 ;   {
-;     :column
-;     :function
-;     :file
+;     :column "name"
+;     :function nil/"name"
+;     :file "name"
 ;   }
 ; )
 (defn getColumns
   [query_raw commands file]
   (println "==================GETCOLUMNS==================")
-  (let [query (subvec query_raw
+  (let [columns (subvec query_raw
                       (if (not= -1 (.indexOf commands "distinct"))
                         2
                         1)
                       (.indexOf query_raw "from"))]
-    (processColumns (apply vector (flatten (for [col columns]
+    (processColumns (flatten (for [col columns]
       (let [indexLeft (index-of col "(")
             indexRight (index-of col ")")
             indexDot (index-of col ".")
@@ -801,11 +769,7 @@
           {:column column
            :function function
            :file file_temp})
-        )
-      ))) file commands)))
-
-(def test_columns
-  ["mp_id" "count(mp_id)" "mp-posts_full.mp_id"])
+        ))))))
 
 ; replaces '_type_' 'join' strings in the query to one '_type_ join' string
 (defn checkJoinFunction
