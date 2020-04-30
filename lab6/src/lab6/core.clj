@@ -266,7 +266,7 @@
 
 (defn select
   [query commands]
-  (println "================SELECT===============")
+  ;(println "================SELECT===============")
   (cond
     ;first condition
     (and (some #(= "inner join" %) commands)
@@ -295,8 +295,8 @@
                 select_functions (callFunctions columns_functions_vector)
                 select_usual (for [line (choose_file file)]
                                (select-keys line columns_usual_vector))]
-            (print "select_usual: ")
-            (println select_usual)
+            ;(print "select_usual: ")
+            ;(println select_usual)
             (cond
               (empty? select_functions) select_usual
               (empty? select_usual) (vector select_functions)
@@ -373,13 +373,13 @@
 ; ]
 (defn where
   [selected_data clause_undone]
-  (println "======WHERE======")
+  ;(println "======WHERE======")
   (let [clauseWord (get clause_undone :clauseWord)
         clause (get clause_undone :clause)]
-    (print "clause: ")
-    (println clause)
-    (print "clauseWord: ")
-    (println clauseWord)
+    ;(print "clause: ")
+    ;(println clause)
+    ;(print "clauseWord: ")
+    ;(println clauseWord)
     (remove nil? (for [element selected_data]
                      (when (check_true clause clauseWord element) element)))))
 
@@ -396,24 +396,24 @@
 ; then returns the data after validating if needed
 (defn checkWhere
   [selected_data commands clause]
-  (println "=====CHECKWHERE=====")
-  (print "selected_data: ")
-  (println selected_data)
+  ;(println "=====CHECKWHERE=====")
+  ;(print "selected_data: ")
+  ;(println selected_data)
   (if (not= -1 (.indexOf commands "where"))
     (where selected_data clause)
     selected_data))
 
 (defn checkSelect
   [query commands]
-  (println "==================CHECKSELECT==================")
+  ;(println "==================CHECKSELECT==================")
   (if (not= -1 (.indexOf commands "distinct"))
     (select_distinct query commands)
     (select query commands)))
 
 (defn printResult
   [query]
-  (print "query: ")
-  (println query)
+  ;(print "query: ")
+  ;(println query)
   (clojure.pprint/print-table query))
 
 ; select count(mp_id) from mp-posts_full;
@@ -481,6 +481,7 @@
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mps-declarations_rada;
 ; select distinct mp_id from mp-posts_full order by mp_id desc;
+; select mp_id, full_name, count(mp_id), count(full_name) from mp-posts_full order by mp_id asc;
 
 ; parses the simple clause (e.g.: from "mp_id>=21000" to { :column "mp_id"
 ;                                                          :operation ">="
@@ -490,9 +491,6 @@
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone columns_raw]
-  ;(println "==================getSimpleClause==================")
-  ;(println clause_undone)
-  ;(println columns_raw)
   (let [columns (vec (for [element columns_raw]
                        (if (nil? (get element :function))
                          (get element :column)
@@ -521,7 +519,6 @@
 ; parses the clause
 (defn getClause
   [clause_undone columns]
-  ;(println "==================GETCLAUSE==================")
   (let [clauseWord (cond
                      (not= -1 (.indexOf clause_undone "and"))
                      "and"
@@ -540,7 +537,6 @@
 ; mp_id asc name desc
 (defn getOrderClause
   [query_raw]
-  ;(println "==================GETORDERCLAUSE==================")
   (let [query_remade (loop [query []
                             lastIndex 0
                             index 0]
@@ -783,6 +779,7 @@
     (print "query: ")
     (println query)
     (print "clause: ")
+    (println clause)
     (print "orderClause: ")
     (println orderClause)
     {:commands commands
