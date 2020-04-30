@@ -243,17 +243,11 @@
 
 (defn Count
   [file column]
-  (print "type of a count: ")
-  (println (type (count file)))
   (vector (str (count file))))
 
 (defn callFunction
   [file column index columns]
   (println "CALLFUNCTION")
-  (print "columns: ")
-  (println columns)
-  (print "The result of a count: ")
-  (println (Count file (peek column)))
   (case (first column)
     "count" (Count file (peek column))
     "sum" (Sum file index)
@@ -263,50 +257,79 @@
 ; select count(mp_id) from mp-posts_full;
 
 (defn callFunctions
-  [file columns]
+  [columns]
   (println "==============CALLFUNCTIONS=============")
-  (println "file: ")
-  (println file)
-  (print "columns: ")
-  (println columns)
-  (println (for [column columns]
-             (when (not= "" (first column))
-               (callFunction file column (.indexOf columns column) columns))))
-  (for [column columns]
-    (when (not= "" (first column))
-      (callFunction file column (.indexOf columns column) columns))))
+
+  )
+
+(defn full-outer-join
+  [field1 field2 table1 table2])
+
+(defn inner-join
+  [field1 field2 table1 table2]
+  (remove nil? (let [table (if (> (count table1) (count table2))
+                             table1
+                             table2)
+                     other_table (if (<= (count table1) (count table2))
+                                   table1
+                                   table2)
+                     table_count (count table)]
+                 (for [i (range 0 table_count)]
+                   (let [elem1 (nth table i)
+                         elem2 (remove nil? (for [elem other_table]
+                                              (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
+                                                elem
+                                                nil)))]
+                     (if (not= 0 (count elem2))
+                       (merge (nth table i) (first elem2))
+                       nil)))
+                 )))
 
 (defn select
   [query commands]
   (println "================SELECT===============")
-  (def temp (let [[file & columns] query]
-              (print "file: ")
-              (println file)
-              (print "columns: ")
-              (println columns)
-              (print "amount of the functions: ")
-              (println (count (remove nil? (for [column columns]
-                                             (if (not= "" (first column))
-                                               (first column)
-                                               nil)))))))
-  (let [[file & columns] query]
-    (cond
-      (and (= 0 (count (remove nil? (for [column columns]
-                                      (if (not= "" (first column))
-                                        (first column)
-                                        nil)))))
-           (= -1 (.indexOf commands "group by")))
-      (for [element (choose_file file)]
-        (for [column (vec columns)]
-          (get element (keyword (peek column)))))
-      (= -1 (.indexOf commands "group by"))
-      (callFunctions (for [element (choose_file file)]
-                       (for [column (vec columns)]
-                         (get element (keyword (peek column)))))
-                     columns)
-      :else nil
-      )))
+  (cond
+    ;first condition
+    (and (some #(= "inner join" %) commands)
+         true
+         ; other conditions
+         )
+    ; first action
+    (inner-join query "" "" "")
+    ; second condition
+    (and (some #(= "full outer join" %) commands)
+         true
+         ; other conditions
+         )
+    ; second action
+    (full-outer-join query "" "" "")
+    :else (let [columns (get query :columns)
+                file (get query :file)
+                columns_usual_vector (remove nil? (for [column columns]
+                                 (if (nil? (get column :function))
+                                   (keyword (get column :column))
+                                   nil)))
+                columns_functions_vector (remove nil? (for [column columns]
+                                                        (if (some? (get column :function))
+                                                          column
+                                                          nil)))
+                ;select_functions (callFunctions columns_functions_vector)
+                select_usual (for [line (choose_file file)]
+                               (select-keys line columns_usual_vector))]
+            select_usual
+            )))
 ;do changes to prepare data
+
+(def query_temp
+  {:file "mp-posts_full"
+   :columns [
+             {:column "mp_id"
+              :function nil
+              :file "mp-posts_full"}
+             {:column "fullname"
+              :function nil
+              :file "mp-posts_full"}
+             ]})
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
@@ -385,8 +408,6 @@
                     (not= -1 (.indexOf clause_undone "or")) "or"
                     :else nil
                     ))
-  (print "clauseWord: ")
-  (println clauseWord)
   (def clause (if (not= nil clauseWord)
                 (vec (rest clause_undone))
                 clause_undone))
@@ -423,10 +444,6 @@
 (defn checkSelect
   [query commands]
   (println "==================CHECKSELECT==================")
-  (print "commands: ")
-  (println commands)
-  (print "query: ")
-  (println query)
   (if (not= -1 (.indexOf commands "distinct"))
     (select_distinct query commands)
     (select query commands)))
@@ -437,18 +454,6 @@
 
 ; select count(mp_id) from mp-posts_full;
 ; select count(mp_id), count(full_name) from mp-posts_full;
-
-(defn checkJson
-  [file]
-  (case file
-    "mp-posts_full" false
-    "map_zal-skl9" false
-    "plenary_register_mps-skl9" false
-    "plenary_vote_results-skl9" false
-    "mps-declarations_rada" true
-    ))
-
-
 ; select distinct mp_id from mps-declarations_rada;
 ; select distinct mp_id from mps-declarations_rada;
 
@@ -457,44 +462,12 @@
 (defn prepareData
   [query columns commands file]
   (println "===================PREPAREDATA===================")
-  (print "columns: ")
-  (println columns)
-  (print "query: ")
-  (println query)
-  (print "types of data in query: ")
-  (println (for [element (first query)]
-             (type element)))
-  (def query_remade (if (checkJson file)
-                      query
-                      (vec (for [line query]
-                             (vec (for [element line]
-                                    (if (isdigit? (first element))
-                                      (read-string element)
-                                      element)))))))
-
-  (print "query_remade: ")
-  (println query_remade)
-  (print "types of data in query_remade: ")
-  (println (for [element (first query_remade)]
-             (type element)))
-  (def columns_usual (vec (for [column columns]
-                            (peek column))))
-  (print "columns_usual: ")
-  (println columns_usual)
-  (def columns_function (vec (for [column columns]
-                               (str (first column)
+  (let [columns_function (vec (for [column columns]
+                               (str (get column :function)
                                     "("
-                                    (peek column)
-                                    ")"))))
-  (print "columns_function: ")
-  (println columns_function)
-  (print "possible data for functions: ")
-  (println (apply vector (for [element (flatten query_remade)]
-                           (str element))))
-  (print "the types in the possible data for functions: ")
-  (println (for [element (apply vector (for [element (flatten query_remade)]
-                                         (str element)))]
-             (type element)))
+                                    (get column :column)
+                                    ")")))
+        ])
   (print "the resulting map: ")
   (println (apply vector columns_function (apply vector (for [element (flatten query_remade)]
                                                           (str element)))))
@@ -528,14 +501,6 @@
                       (nth parsed_query 3)
                       nil)
         columns (vec (rest query))]
-    (print "commands: ")
-    (println commands)
-    (print "query: ")
-    (println query)
-    (print "clause: ")
-    (println clause)
-    (print "columns: ")
-    (println columns)
     (printResult (orderBy (prepareData (checkWhere (checkSelect query commands) commands clause) columns commands file) orderClause))
     ))
 
@@ -834,9 +799,10 @@
   (println "==================PARSEQUERY==================")
   (let [query_raw (joinSeparateCommands query_raw_raw)
         commands (getCommands query_raw commands_list)
-        file (vector (nth query_raw (+ 1 (.indexOf query_raw "from"))))
+        file (nth query_raw (+ 1 (.indexOf query_raw "from")))
         columns (getColumns query_raw commands file)
-        query (apply conj file columns)
+        query {:file file
+               :columns columns}
         clause (if (not= -1 (.indexOf commands "where"))
                  (cond
                    ; first condition
@@ -880,26 +846,6 @@
 (def input_test
   ["select" "*" "from" "mp-posts_full" "inner" "join" "mp" "on" "mp_id"])
 
-(defn inner-join
-  [field1 field2 table1 table2]
-  (remove nil? (let [table (if (> (count table1) (count table2))
-                             table1
-                             table2)
-                     other_table (if (<= (count table1) (count table2))
-                                   table1
-                                   table2)
-                     table_count (count table)]
-                 (for [i (range 0 table_count)]
-                   (let [elem1 (nth table i)
-                         elem2 (remove nil? (for [elem other_table]
-                                              (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
-                                                elem
-                                                nil)))]
-                     (if (not= 0 (count elem2))
-                       (merge (nth table i) (first elem2))
-                       nil)))
-                 )))
-
 (def test1
   [{:id 2
     :name "kek"}
@@ -926,3 +872,13 @@
     :surname "keki4"}
    {:id 3
     :surname "rofli4"}])
+
+(def test3
+  [{:function "123"}])
+
+(def test-print
+  [{:id 2, :name "kek" :function 123}
+   {:id 2, :name "lol" :function nil}
+   {:id 1, :name "lol" :function nil}
+   {:id 3, :name "rofl" :function nil}
+   {:id 47, :name "oi" :function nil}])
