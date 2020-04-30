@@ -573,6 +573,11 @@
       (read-string secondVector)
       ")")))
 
+(defn getColumnsJoin
+  [query_raw commands file]
+  (println "========GETCOLUMNSJOIN=========")
+  ())
+
 ; gets the vector of all 'columns' from the file we're parsing
 (defn getColumnsFromStar
   [file]
@@ -603,7 +608,7 @@
 ; )
 (defn getColumns
   [query_raw commands file]
-  (println "==================GETCOLUMNS==================")
+  ;(println "==================GETCOLUMNS==================")
   (let [columns (subvec query_raw
                       (if (not= -1 (.indexOf commands "distinct"))
                         2
@@ -709,7 +714,11 @@
   (let [query_raw (joinSeparateCommands query_raw_raw)
         commands (getCommands query_raw commands_list)
         file (nth query_raw (+ 1 (.indexOf query_raw "from")))
-        columns (getColumns query_raw commands file)
+        columns (if (and (= -1 (.indexOf commands "inner join"))
+                         (= -1 (.indexOf commands "full outer join")))
+                  (getColumns query_raw commands file)
+                  (getColumnsJoin query_raw commands file)
+                  )
         query {:file file
                :columns columns}
         clause (if (not= -1 (.indexOf commands "where"))
