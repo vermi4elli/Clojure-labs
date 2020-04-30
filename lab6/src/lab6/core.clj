@@ -781,8 +781,8 @@
 ;               ["index_of_column" ">=/not=" "bound"]
 ;               ...
 ;             ]
-; orderClause: "#(compare [(:row %1) (:col %2)]
-;                         [(:row %2) (:col %1)])"
+; orderClause: "#(compare [(:col1 %1) (:col2 %2)]
+;                         [(:col1 %2) (:col2 %1)])"
 ; ]
 (defn parseQuery
   [query_raw_raw commands_list]
@@ -851,3 +851,32 @@
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main))
   )
+
+(defn inner-join
+  [field1 field2 table1 table2]
+  (remove nil? (for [i (range 0 (if (< (count table1) (count table2))
+                                  (count table1)
+                                  (count table2)))]
+                 (if (= (get (nth table1 i) (keyword field1)) (get (nth table2 i) (keyword field2)))
+                   (merge (nth table1 i) (nth table2 i))
+                   nil
+                   )
+    )))
+
+(def test1
+  [{:id 2
+    :name "kek"}
+   {:id 1
+    :name "lol"}
+   {:id 3
+    :name "rofl"}
+   {:id 47
+    :name "oi"}])
+
+(def test2
+  [{:id 1
+    :surname "loli4"}
+   {:id 2
+    :surname "keki4"}
+   {:id 3
+    :surname "rofli4"}])
