@@ -81,9 +81,24 @@
 ; The parsed files and their choice:
 
 ; MANDATORY
+
+; columns:
+;   :mp_id
+;   :full_name
+;   :post_name
+;   :unit_name
+;   :post_title
 (def mp-posts_full
   (vec (for [elem (loadFile "../data files/mp-posts_full.csv")]
      (merge elem {:mp_id (read-string (get elem :mp_id))}))))
+; columns:
+;   :row
+;   :col
+;   :pos_x
+;   :pos_y
+;   :title
+;   :id_mp
+;   :id_fr
 (def map_zal-skl9
   (vec (for [elem (loadFile "../data files/map_zal-skl9.csv")]
          (merge elem {:row (read-string (get elem :row))
@@ -97,6 +112,14 @@
                                             "" "nil"
                                             (get elem :id_fr)))
                       }))))
+
+; columns
+;   :date_agenda
+;   :id_question
+;   :id_event
+;   :presence
+;   :absent
+;   :results
 (def plenary_register_mps-skl9
   (vec (for [elem (loadFile "../data files/plenary_register_mps-skl9.tsv")]
          (merge elem {
@@ -107,6 +130,19 @@
                       }))))
 
 ; ADDITIONAL
+
+; columns
+;   :date_agenda
+;   :id_question
+;   :id_event
+;   :for
+;   :against
+;   :abstain
+;   :not_voting
+;   :total
+;   :presence
+;   :absent
+;   :results
 (def plenary_vote_results-skl9
   (vec (for [elem (loadFile "../data files/plenary_vote_results-skl9.tsv")]
          (merge elem {
@@ -122,6 +158,14 @@
                       }))))
 
 ; EXTRA
+
+; columns
+;   :mp_id
+;   :fullname
+;   :year
+;   :guid
+;   :format
+;   :decl_url
 (def mps-declarations_rada
   (loadFile "../data files/mps-declarations_rada.json"))
 
