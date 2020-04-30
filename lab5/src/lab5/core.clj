@@ -122,8 +122,8 @@
   [file columns col_index]
   (def column (for [line file]
                 (nth line col_index)))
-  ;(print "column: ")
-  ;(println column)
+  (print "column: ")
+  (println column)
   (loop [index 0
          limit (count column)
          is_string (if (isdigit? (ffirst column))
@@ -149,11 +149,12 @@
 
 (defn Sum
   [file col_index]
-  ;(println "===============SUM==============")
-  ;(print "file: ")
-  ;(println file)
-  ;(print "col index: ")
-  ;(println col_index)
+  (println "===============SUM==============")
+  (print "file: ")
+  (println file)
+  (print "col index: ")
+  (println col_index)
+  (print "")
   (if (isdigit? (first (nth (first file) col_index)))
     (loop [index 0
            limit (count file)
@@ -169,15 +170,17 @@
 
 (defn Count
   [file column]
-  ;(print "type of a count: ")
-  ;(println (type (count file)))
+  (print "type of a count: ")
+  (println (type (count file)))
   (vector (str (count file))))
 
 (defn callFunction
   [file column index columns]
-  ;(println "CALLFUNCTION")
-  ;(print "The result of a count: ")
-  ;(println (Count file (peek column)))
+  (println "CALLFUNCTION")
+  (print "columns: ")
+  (println columns)
+  (print "The result of a count: ")
+  (println (Count file (peek column)))
   (case (first column)
     "count" (Count file (peek column))
     "sum" (Sum file index)
@@ -188,11 +191,14 @@
 
 (defn callFunctions
   [file columns]
-  ;(println "==============CALLFUNCTIONS=============")
-  ;(println "file: ")
-  ;(println file)
-  ;(print "columns: ")
-  ;(println columns)
+  (println "==============CALLFUNCTIONS=============")
+  (println "file: ")
+  (println file)
+  (print "columns: ")
+  (println columns)
+  (println (for [column columns]
+             (when (not= "" (first column))
+               (callFunction file column (.indexOf columns column) columns))))
   (for [column columns]
     (when (not= "" (first column))
       (callFunction file column (.indexOf columns column) columns))))
@@ -200,10 +206,17 @@
 (defn select
   [query commands]
   (println "================SELECT===============")
-  (println query)
+  (def temp (let [[file & columns] query]
+             (print "file: ")
+             (println file)
+             (print "columns: ")
+             (println columns)
+             (print "amount of the functions: ")
+             (println (count (remove nil? (for [column columns]
+                                   (if (not= "" (first column))
+                                     (first column)
+                                     nil)))))))
   (let [[file & columns] query]
-    (print "columns: ")
-    (println columns)
     (cond
       (and (= 0 (count (remove nil? (for [column columns]
                                       (if (not= "" (first column))
@@ -289,23 +302,23 @@
 ; ]
 (defn where
   [file clause_undone]
-  ;(println "===============WHERE==============")
-  ;(print "file: ")
-  ;(println file)
-  ;(print "clause_undone: ")
-  ;(println clause_undone)
+  (println "===============WHERE==============")
+  (print "file: ")
+  (println file)
+  (print "clause_undone: ")
+  (println clause_undone)
   (def clauseWord (cond
                 (not= -1 (.indexOf clause_undone "and")) "and"
                 (not= -1 (.indexOf clause_undone "or")) "or"
                 :else nil
                 ))
-  ;(print "clauseWord: ")
-  ;(println clauseWord)
+  (print "clauseWord: ")
+  (println clauseWord)
   (def clause (if (not= nil clauseWord)
                 (vec (rest clause_undone))
                 clause_undone))
-  ;(println "clause: ")
-  ;(println clause)
+  (println "clause: ")
+  (println clause)
   (remove nil? (vec
                  (for [line file]
                    (when (check_true clause clauseWord line) (vec line))))))
@@ -323,24 +336,24 @@
 ; then returns the data after validating if needed
 (defn checkWhere
   [select_result commands clause]
-  ;(println "==================CHECKWHERE==================")
-  ;(print "commands: ")
-  ;(println commands)
-  ;(print "query: ")
-  ;(println select_result)
-  ;(print "clause: ")
-  ;(println clause)
+  (println "==================CHECKWHERE==================")
+  (print "commands: ")
+  (println commands)
+  (print "query: ")
+  (println select_result)
+  (print "clause: ")
+  (println clause)
   (if (not= -1 (.indexOf commands "where"))
     (where select_result clause)
     select_result))
 
 (defn checkSelect
   [query commands]
-  ;(println "==================CHECKSELECT==================")
-  ;(print "commands: ")
-  ;(println commands)
-  ;(print "query: ")
-  ;(println query)
+  (println "==================CHECKSELECT==================")
+  (print "commands: ")
+  (println commands)
+  (print "query: ")
+  (println query)
   (if (not= -1 (.indexOf commands "distinct"))
     (select_distinct query commands)
     (select query commands)))
@@ -352,56 +365,76 @@
 ; select count(mp_id) from mp-posts_full;
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
-(defn fileExtension
+(defn checkJson
   [file]
   (case file
-    "mp-posts_full" "csv"
-    "map_zal-skl9" "csv"
-    "plenary_register_mps-skl9" "csv"
-    "plenary_vote_results-skl9" "csv"
-    "mps-declarations_rada" "json"))
+    "mp-posts_full" false
+    "map_zal-skl9" false
+    "plenary_register_mps-skl9" false
+    "plenary_vote_results-skl9" false
+    "mps-declarations_rada" true
+    ))
+
+
+; select distinct mp_id from mps-declarations_rada;
+; select distinct mp_id from mps-declarations_rada;
 
 ; turns the stringed numbers into normal numbers, then
 ; makes a map out of the result data to feed it into order by and, then, printResult
 (defn prepareData
   [query columns commands file]
-  ;(println "===================PREPAREDATA===================")
-  ;(print "columns: ")
-  ;(println columns)
-  ;(print "query: ")
-  ;(println query)
-  (println (fileExtension file))
-  (def query_remade (if (= "json" (fileExtension file))
-                        query
-                        (vec (for [line query]
-                               (vec (for [element line]
-                                      (if (isdigit? (first element))
-                                        (read-string element)
-                                        element)))))))
+  (println "===================PREPAREDATA===================")
+  (print "columns: ")
+  (println columns)
+  (print "query: ")
+  (println query)
+  (print "types of data in query: ")
+  (println (for [element (first query)]
+             (type element)))
+  (def query_remade (if (checkJson file)
+                      query
+                      (vec (for [line query]
+                             (vec (for [element line]
+                                    (if (isdigit? (first element))
+                                      (read-string element)
+                                      element)))))))
 
-  ;(print "query_remade: ")
-  ;(println query_remade)
+  (print "query_remade: ")
+  (println query_remade)
+  (print "types of data in query_remade: ")
+  (println (for [element (first query_remade)]
+             (type element)))
   (def columns_usual (vec (for [column columns]
                             (peek column))))
-  ;(print "columns_usual: ")
-  ;(println columns_usual)
+  (print "columns_usual: ")
+  (println columns_usual)
   (def columns_function (vec (for [column columns]
                                (str (first column)
                                     "("
                                     (peek column)
                                     ")"))))
-  ;(print "columns_function: ")
-  ;(println columns_function)
+  (print "columns_function: ")
+  (println columns_function)
+  (print "possible data for functions: ")
+  (println (apply vector (for [element (flatten query_remade)]
+                           (str element))))
+  (print "the types in the possible data for functions: ")
+  (println (for [element (apply vector (for [element (flatten query_remade)]
+                           (str element)))]
+             (type element)))
+  (print "the resulting map: ")
+  (println (apply vector columns_function (apply vector (for [element (flatten query_remade)]
+                                                          (str element)))))
   (cond
     (and (= -1 (.indexOf commands "group by"))
          (= 0 (count (remove nil? (for [column columns]
                                     (if (not= "" (first column))
                                       (first column)
                                       nil))))))
-    (apply mapData (apply vector columns_usual query_remade))
+      (apply mapData (apply vector columns_usual query_remade))
     (= -1 (.indexOf commands "group by"))
-    (apply mapData (vector columns_function (apply vector (for [element (flatten query_remade)]
-                                                            (str element)))))
+      (apply mapData (vector columns_function (apply vector (for [element (flatten query_remade)]
+                                                                    (str element)))))
     :else nil)
   )
 
@@ -411,10 +444,10 @@
 ; starts the execution of the correct function
 (defn executeQuery
   [parsed_query]
-  ;(println "==================EXECUTEQUERY==================")
+  (println "==================EXECUTEQUERY==================")
   (let [commands (nth parsed_query 0)
         query (nth parsed_query 1)
-        file (nth (nth parsed_query 1) 0)
+        file (nth query 0)
         clause (if (nth parsed_query 2)
                  (nth parsed_query 2)
                  nil)
@@ -422,14 +455,14 @@
                       (nth parsed_query 3)
                       nil)
         columns (vec (rest query))]
-    ;(print "commands: ")
-    ;(println commands)
-    ;(print "query: ")
-    ;(println query)
-    ;(print "clause: ")
-    ;(println clause)
-    ;(print "columns: ")
-    ;(println columns)
+    (print "commands: ")
+    (println commands)
+    (print "query: ")
+    (println query)
+    (print "clause: ")
+    (println clause)
+    (print "columns: ")
+    (println columns)
     (printResult (orderBy (prepareData (checkWhere (checkSelect query commands) commands clause) columns commands file) orderClause))
     ))
 
@@ -472,14 +505,15 @@
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
+; select distinct mp_id, full_name from mps-declarations_rada;
 
 ; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
 ;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
 (defn getSimpleClause
   [clause_undone columns_raw]
-  ;(println "==================getSimpleClause==================")
-  ;(print "clause_undone: ")
-  ;(println clause_undone)
+  (println "==================getSimpleClause==================")
+  (print "clause_undone: ")
+  (println clause_undone)
   (def columns (vec (for [element columns_raw]
                  (if (not= "" (first element))
                    (str (first element)
@@ -487,21 +521,21 @@
                         (peek element)
                         ")")
                    (peek element)))))
-  ;(print "columns: ")
-  ;(println columns)
+  (print "columns: ")
+  (println columns)
   (def clause (if (not= -1 (.indexOf clause_undone "not"))
                 (clojure.string/join " " (subvec clause_undone 1))
                 (clojure.string/join " " (subvec clause_undone 0))))
-  ;(print "clause: ")
-  ;(println clause)
+  (print "clause: ")
+  (println clause)
   ;
   (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
   (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
   ;
   (def operation (first (remove nil? (for [element (keys operationsTranslations)]
                    (if-not (nil? (clojure.string/index-of clause element)) element)))))
-  ;(print "operation: ")
-  ;(println operation)
+  (print "operation: ")
+  (println operation)
   ;
   (def column (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation)))))
   (def finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
@@ -518,11 +552,11 @@
 ; parses the clause
 (defn getClause
   [clause_undone columns]
-  ;(println "==================GETCLAUSE==================")
-  ;(print "clause undone: ")
-  ;(println clause_undone)
-  ;(print "columns: ")
-  ;(println columns)
+  (println "==================GETCLAUSE==================")
+  (print "clause undone: ")
+  (println clause_undone)
+  (print "columns: ")
+  (println columns)
   ;
   (def clauseWord (cond
                     (not= -1 (.indexOf clause_undone "and"))
@@ -631,8 +665,8 @@
                    (recur (+ x 1)
                           (conj result (name (nth (keys (first (choose_file (first file)))) x))))
                    result)))
-  (print "columns: ")
-  (println columns)
+  ;(print "columns: ")
+  ;(println columns)
   ;(println "==================")
   (vec (for [el columns]
     (vector "" el))))
@@ -660,42 +694,63 @@
                         (clojure.string/split column #"[()]")
                       :else
                         (vector "" column))))))
-  ;(print "final query: ")
-  ;(println (first final_query))
-  (def result (first final_query))
-  ;(print "result: ")
-  ;(println result)
-  ;(print "the amount of columns: ")
-  ;(println (count result))
+  (print "final query: ")
+  (println final_query)
+  (def result (if (= clojure.lang.PersistentVector (type (first (first final_query))))
+                (first final_query)
+                final_query))
+  (print "result: ")
+  (println result)
+  (print "the exception will be thrown: ")
+  (println (and
+             (= -1 (.indexOf commands "group by"))
+             (not= 0 (count (remove nil? (for [column result]
+                                           (if (not= "" (first column))
+                                             (first column)
+                                             nil)))))
+             (not= (count result) (count (remove nil? (for [column result]
+                                                         (if (not= "" (first column))
+                                                           (first column)
+                                                           nil)))))))
+  (print "result: ")
+  (println result)
+  (print "the amount of columns: ")
+  (println (count result))
+  (print "the amount of functions: ")
+  (println (count (remove nil? (for [column result]
+                                 (if (not= "" (first column))
+                                   (first column)
+                                   nil)))))
+
+
   ; select count(mp_id), count(full_name) from mp-posts_full;
 
-  ;(cond
-  ;    (and
-  ;      (= -1 (.indexOf commands "group by"))
-  ;      (not= 0 (count (remove nil? (for [column result]
-  ;                                      (if (not= "" (first column))
-  ;                                        (first column)
-  ;                                        nil)))))
-  ;      (not= (count result) (count (remove nil? (for [column result]
-  ;                                      (if (not= "" (first column))
-  ;                                        (first column)
-  ;                                        nil))))))
-  ;      (throw (Exception. "The amount of the functions not equal to the total amount of columns!"))
-  ;    :else result)
-  result
+  (cond
+    (and
+      (= -1 (.indexOf commands "group by"))
+      (not= 0 (count (remove nil? (for [column result]
+                                      (if (not= "" (first column))
+                                        (first column)
+                                        nil)))))
+      (not= (count result) (count (remove nil? (for [column result]
+                                      (if (not= "" (first column))
+                                        (first column)
+                                        nil))))))
+      (throw (Exception. "The amount of the functions not equal to the total amount of columns!"))
+    :else result)
   )
 
 ; parses the columns and functions
 (defn getColumns
   [query_raw commands file]
-  ;(println "==================GETCOLUMNS==================")
+  (println "==================GETCOLUMNS==================")
   (def query (subvec query_raw
                      (if (not= -1 (.indexOf commands "distinct"))
                        2
                        1)
                      (.indexOf query_raw "from")))
-  ;(print "query: ")
-  ;(println query)
+  (print "query: ")
+  (println query)
   (checkFunctions query file commands)
   )
 
@@ -731,15 +786,15 @@
 ; ]
 (defn parseQuery
   [query_raw_raw commands_list]
-  ;(println "==================PARSEQUERY==================")
+  (println "==================PARSEQUERY==================")
   (def query_raw (processQuery query_raw_raw))
-  ;(print "query_raw: ")
-  ;(println query_raw)
+  (print "query_raw: ")
+  (println query_raw)
   (def commands (getCommands query_raw commands_list))
-  ;(print "commands: ")
-  ;(println commands)
-  ;(print "The amount of arguments in commands: ")
-  ;(println (count commands))
+  (print "commands: ")
+  (println commands)
+  (print "The amount of arguments in commands: ")
+  (println (count commands))
   (def file (cond
               (not= -1 (.indexOf commands "where"))
                 (subvec query_raw
@@ -750,14 +805,14 @@
                         (+ 1 (.indexOf query_raw "from"))
                         (.indexOf query_raw "order by"))
               (= -1 (.indexOf commands "where")) (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
-  ;(print "file: ")
-  ;(println file)
+  (print "file: ")
+  (println file)
   (def columns (getColumns query_raw commands file))
-  ;(print "columns: ")
-  ;(println columns)
+  (print "columns: ")
+  (println columns)
   (def query (apply conj file columns))
-  ;(print "query: ")
-  ;(println query)
+  (print "query: ")
+  (println query)
   (def clause (cond
                 (and (not= -1 (.indexOf commands "where"))
                      (= -1 (.indexOf commands "order by"))
@@ -775,15 +830,15 @@
                 ; other conditions
                 :else nil
                 ))
-  ;(println "================")
-  ;(print "clause: ")
-  ;(println clause)
+  (println "================")
+  (print "clause: ")
+  (println clause)
   (def orderClause (cond
                      (not= -1 (.indexOf commands "order by"))
                         (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
                      :else nil))
-  ;(print "orderClause: ")
-  ;(println orderClause)
+  (print "orderClause: ")
+  (println orderClause)
   (vector commands query clause orderClause))
 
 
