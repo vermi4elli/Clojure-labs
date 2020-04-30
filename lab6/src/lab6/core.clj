@@ -82,15 +82,44 @@
 
 ; MANDATORY
 (def mp-posts_full
-  (loadFile "../data files/mp-posts_full.csv"))
+  (vec (for [elem (loadFile "../data files/mp-posts_full.csv")]
+     (merge elem {:mp_id (read-string (get elem :mp_id))}))))
 (def map_zal-skl9
-  (loadFile "../data files/map_zal-skl9.csv"))
+  (vec (for [elem (loadFile "../data files/map_zal-skl9.csv")]
+         (merge elem {:row (read-string (get elem :row))
+                      :col (read-string (get elem :col))
+                      :pos_x (read-string (get elem :pos_x))
+                      :pos_y (read-string (get elem :pos_y))
+                      :id_mp (read-string (case (get elem :id_mp)
+                                            "" "nil"
+                                            (get elem :id_mp)))
+                      :id_fr (read-string (case (get elem :id_fr)
+                                            "" "nil"
+                                            (get elem :id_fr)))
+                      }))))
 (def plenary_register_mps-skl9
-  (loadFile "../data files/plenary_register_mps-skl9.tsv"))
+  (vec (for [elem (loadFile "../data files/plenary_register_mps-skl9.tsv")]
+         (merge elem {
+                      :id_question (read-string (get elem :id_question))
+                      :id_event (read-string (get elem :id_event))
+                      :presence (read-string (get elem :presence))
+                      :absent (read-string (get elem :absent))
+                      }))))
 
 ; ADDITIONAL
 (def plenary_vote_results-skl9
-  (loadFile "../data files/plenary_vote_results-skl9.tsv"))
+  (vec (for [elem (loadFile "../data files/plenary_vote_results-skl9.tsv")]
+         (merge elem {
+                      :presence (read-string (get elem :presence))
+                      :against (read-string (get elem :against))
+                      :id_question (read-string (get elem :id_question))
+                      :for (read-string (get elem :for))
+                      :total (read-string (get elem :total))
+                      :absent (read-string (get elem :absent))
+                      :abstain (read-string (get elem :abstain))
+                      :id_event (read-string (get elem :id_event))
+                      :not_voting (read-string (get elem :not_voting))
+                      }))))
 
 ; EXTRA
 (def mps-declarations_rada
@@ -889,3 +918,9 @@
     :surname "keki4"}
    {:id 3
     :surname "rofli4"}])
+
+(def test3
+  {:id "2"})
+
+(def test4
+  {:id 2})
