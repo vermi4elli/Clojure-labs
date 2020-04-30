@@ -573,20 +573,6 @@
       (read-string secondVector)
       ")")))
 
-(defn getColumnsJoin
-  [query_raw commands file]
-  (println "========GETCOLUMNSJOIN=========")
-  ())
-
-; gets the vector of all 'columns' from the file we're parsing
-(defn getColumnsFromStar
-  [file]
-  ;(println "==================GETCOLUMNSFROMSTAR==================")
-  (let [columns_raw (keys (first (choose_file file)))]
-    (for [elem columns_raw]
-      {:column (name elem)
-       :function nil
-       :file file})))
 
 ; checks if the functions in columns are known
 (defn processColumns
@@ -597,6 +583,16 @@
         (if (nil? (some #(= function %) columnsFunctions))
           (throw (Exception. (str "The function " function " is not known!")))
           column)))))
+
+; gets the vector of all 'columns' from the file we're parsing
+(defn getColumnsFromStar
+  [file]
+  ;(println "==================GETCOLUMNSFROMSTAR==================")
+  (let [columns_raw (keys (first (choose_file file)))]
+    (for [elem columns_raw]
+      {:column (name elem)
+       :function nil
+       :file file})))
 
 ; parses the columns and functions into
 ; (
@@ -657,11 +653,11 @@
 (defn checkByFunction
   [query word]
   ;(println "================CHECKBYFUNCTION=================")
-  (def mainWord (first (split word #" ")))
-  (if (not= -1 (.indexOf query mainWord))
+  (let [mainWord (first (split word #" "))]
+   (if (not= -1 (.indexOf query mainWord))
     (let [raw (assoc query (.indexOf query mainWord) word)]
       (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
-    query))
+    query)))
 
 ; gets those commands from the commands_list in the vector,
 ; which are present in the query
@@ -714,11 +710,7 @@
   (let [query_raw (joinSeparateCommands query_raw_raw)
         commands (getCommands query_raw commands_list)
         file (nth query_raw (+ 1 (.indexOf query_raw "from")))
-        columns (if (and (= -1 (.indexOf commands "inner join"))
-                         (= -1 (.indexOf commands "full outer join")))
-                  (getColumns query_raw commands file)
-                  (getColumnsJoin query_raw commands file)
-                  )
+        columns (getColumns query_raw commands file)
         query {:file file
                :columns columns}
         clause (if (not= -1 (.indexOf commands "where"))
@@ -774,37 +766,90 @@
 
 ; COMMANDS
 
+; on WHERE, SELECT, DISTINCT, ORDER BY
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id>=21100;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21900 order by mp_id;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21100;
-; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
-; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mps-declarations_rada;
 ; select distinct mp_id from mp-posts_full order by mp_id desc;
-; select mp_id, full_name, count(mp_id), count(full_name) from mp-posts_full order by mp_id asc;
-
-; select count(mp_id) from mp-posts_full;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
 ; select distinct row, col from map_zal-skl9 where row>=2 and row<=7;
-; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович';
-; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id<>21111;
 ; select distinct mp_id from mp-posts_full where not mp_id<>21111;
-; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
-; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
 ; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row, col;
 ; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
+; select distinct * from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
+; select distinct mp_id, full_name from mp-posts_full order by mp_id;
 
+; on ~, NOT, " ...<>'abc' "
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович';
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
+; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
+; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
+
+; on ~, functions, functions + non-functions
+; select mp_id, full_name, count(mp_id), count(full_name) from mp-posts_full order by mp_id asc;
 ; select count(mp_id) from mp-posts_full;
 ; select count(mp_id), count(full_name) from mp-posts_full;
-; select distinct mp_id from mps-declarations_rada;
-; select distinct mp_id from mps-declarations_rada;
-; select count(mp_id), count(full_name) from mp-posts_full;
 
-; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
-; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or not full_name<>'Яцик Юлія Григорівна';
+(def columns_test
+  ["mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id"])
 
-; select distinct * from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
-; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
-; select distinct mp_id, full_name from mp-posts_full order by mp_id;
-; select count(mp_id), count(full_name) from mp-posts_full;
+(def file_test
+  "mp-posts_full")
+
+(def commands_test
+  ["select" "from" "inner join" "on"])
+
+(def input_test
+  ["select" "mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id" "from" "mp-posts_full" "inner" "join" "mps-declarations_rada" "on" "mp_id"])
+
+(def test1
+  [{:id 2
+    :name "kek"}
+   {:id 2
+    :name "lol"}
+   {:id 1
+    :name "lol"}
+   {:id 3
+    :name "rofl"}
+   {:id 47
+    :name "oi"}])
+
+(def test0
+  [{:id 2}
+   {:id 2}
+   {:id 1}
+   {:id 3}
+   {:id 47}])
+
+(def test2
+  [{:id 1
+    :surname "loli4"}
+   {:id 2
+    :surname "keki4"}
+   {:id 3
+    :surname "rofli4"}])
+
+(def test3
+  [{:function "123"}])
+
+(def test-print
+  [{:id 2, :name "kek" :function 123}
+   {:id 2, :name "lol" :function nil}
+   {:id 1, :name "lol" :function nil}
+   {:id 3, :name "rofl" :function nil}
+   {:id 47, :name "oi" :function nil}])
+
+(def query_temp
+  {:file "mp-posts_full"
+   :columns [
+             {:column "mp_id"
+              :function nil
+              :file "mp-posts_full"}
+             {:column "full_name"
+              :function nil
+              :file "mp-posts_full"}
+             ]})
