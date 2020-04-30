@@ -183,14 +183,6 @@
 ; ========================================
 ; Implementation for SELECT query
 
-(defn isdigit?
-  [character]
-  (if (nil? character)
-    false
-    (if (and (>= (int character) 48) (<= (int character) 57))
-      true
-      false)))
-
 (defn Min
   [file column]
   (let [file_column (for [line (choose_file file)]
@@ -240,8 +232,6 @@
       "sum" (Sum file column)
       "min" (Min file column)
     )))
-
-; select count(mp_id) from mp-posts_full;
 
 (defn callFunctions
   [columns]
@@ -309,22 +299,9 @@
               select_usual
               (merge (first select_usual) select_functions))
             )))
-;do changes to prepare data
-
-(def query_temp
-  {:file "mp-posts_full"
-   :columns [
-             {:column "mp_id"
-              :function nil
-              :file "mp-posts_full"}
-             {:column "full_name"
-              :function nil
-              :file "mp-posts_full"}
-             ]})
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
-
 (defn select_distinct
   [query commands]
   (vec (set (select query commands))))
@@ -334,24 +311,19 @@
 
 ; checks each line in
 (defn check_expression
-  [state data_raw]
+  [clause data_value]
   ;(println "==================CHECK_EXPRESSION==================")
-  (def data (if (isdigit? (first data_raw))
-              data_raw
-              (str "\"" (lower-case data_raw) "\"")))
-  ;(print "data: ")
-  ;(println data)
-  ;(print "type of data: ")
-  ;(println (type data))
-  ;(print "state: ")
-  ;(println state)
-  (eval (read-string (clojure.string/join " " (vector
-                                                "("
-                                                (first state)
-                                                data
-                                                (nth state 1)
-                                                ")")))))
+  (let [data (if (= (type data_value) java.lang.String)
+               (str "\"" (lower-case data_value) "\"")
+               data_value)]
+    (eval (read-string (str
+                         "("
+                         (get clause :operation)
+                         data
+                         (get clause :bound)
+                         ")")))))
 
+; select count(mp_id) from mp-posts_full;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
 ; select distinct row, col from map_zal-skl9 where row>=2 and row<=5;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
@@ -363,7 +335,7 @@
 
 ; checks each line of the file on the conditions mentioned in clause
 (defn check_true
-  [clause clauseWord data]
+  [clause clauseWord selected_element]
   ;(println "==================CHECK_TRUE==================")
   ;(print "clause: ")
   ;(println clause)
@@ -371,35 +343,30 @@
     (not (contains? (set (for [state clause]
                            (when (= false
                                     (check_expression
-                                      (vec (rest state))
-                                      (nth data (read-string (first state)))))
-                             -1))) -1))
-    (not (= (count clause) (count (remove nil? (vec (for [state clause]
-                                                      (when (= false
-                                                               (check_expression
-                                                                 (vec (rest state))
-                                                                 (nth data (read-string (first state)))))
-                                                        -1)))))))))
+                                      (select-keys state [:operation :bound])
+                                      (get selected_element (keyword (get state :column)))))
+                             -1)))
+                    -1))
+    (not (= (count clause)
+            (count (remove nil? (vec (for [state clause]
+                                       (when (= false
+                                                (check_expression
+                                                  (select-keys state [:operation :bound])
+                                                  (get selected_element (keyword (get state :column)))))
+                                         -1)))))))))
 
 ; file is the result after 'select' query,
 ; clause has the next structure:
 ; [
 ;   possible to have the first element as "and" or "or"
-;   [ "number_of_column" ">=/not=/<=/=" "bound" ]
+;   [ "column_name" ">=/not=/<=/=" "bound" ]
 ; ]
 (defn where
-  [file clause_undone]
-  (let [clauseWord (cond
-                     (not= -1 (.indexOf clause_undone "and")) "and"
-                     (not= -1 (.indexOf clause_undone "or")) "or"
-                     :else nil
-                     )
-        clause (if (not= nil clauseWord)
-                 (vec (rest clause_undone))
-                 clause_undone)]
-    (remove nil? (vec
-                   (for [line file]
-                     (when (check_true clause clauseWord line) (vec line)))))))
+  [selected_data clause_undone]
+  (let [clauseWord (get clause_undone :clauseWord)
+        clause (get clause_undone :clause)]
+    (remove nil? (for [element selected_data]
+                     (when (check_true clause clauseWord element) element)))))
 
 (defn orderBy
   [query orderClause]
@@ -436,30 +403,6 @@
 
 ; turns the stringed numbers into normal numbers, then
 ; makes a map out of the result data to feed it into order by and, then, printResult
-(defn prepareData
-  [query columns commands file]
-  (println "===================PREPAREDATA===================")
-  (let [columns_function (vec (for [column columns]
-                               (str (get column :function)
-                                    "("
-                                    (get column :column)
-                                    ")")))
-        ])
-  (print "the resulting map: ")
-  (println (apply vector columns_function (apply vector (for [element (flatten query_remade)]
-                                                          (str element)))))
-  (cond
-    (and (= -1 (.indexOf commands "group by"))
-         (= 0 (count (remove nil? (for [column columns]
-                                    (if (not= "" (first column))
-                                      (first column)
-                                      nil))))))
-    (apply mapData (apply vector columns_usual query_remade))
-    (= -1 (.indexOf commands "group by"))
-    (apply mapData (vector columns_function (apply vector (for [element (flatten query_remade)]
-                                                            (str element)))))
-    :else nil)
-  )
 
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
@@ -478,7 +421,7 @@
                       (nth parsed_query 3)
                       nil)
         columns (vec (rest query))]
-    (printResult (orderBy (prepareData (checkWhere (checkSelect query commands) commands clause) columns commands file) orderClause))
+    (printResult (orderBy (checkWhere (checkSelect query commands) commands clause) orderClause))
     ))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
@@ -486,16 +429,23 @@
 
 ; parses the multi conditional clause to the format:
 ; (e.g. from "mp_id>=21000 and mp_id<=21200"
-;       to [
-;           "and"
-;           [ "0" ">=" "21000"]
-;           [ "0" "<=" "21000"]
-;          ]
+;       to {
+;             :clauseWord "word"
+;             :clause [
+;                       {
+;                         :column "mp_id"
+;                         :operation ">="
+;                         :bound "21000"
+;                       }
+;                       {
+;                         :column "mp_id"
+;                         :operation "<="
+;                         :bound "21000"
+;                       }
+;                     ]
+;         }
 (defn parseComplexClause
   [clause_undone clauseWord]
-  ;(println "==================parseComplexClause==================")
-  ;(print "clause_undone: ")
-  ;(println clause_undone)
   (loop [index 0
          clauseBonds [0]
          clauses []]
@@ -522,72 +472,57 @@
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mps-declarations_rada;
 
-; parses the simple clause (e.g.: from "mp_id>=21000" to [ "mp_id" ">=" "21000" ]
-;                          from "not mp_id>=21000" to [ "mp_id" "<=" "21000" ])
+; parses the simple clause (e.g.: from "mp_id>=21000" to { :column "mp_id"
+;                                                          :operation ">="
+;                                                          :bound "21000" }
+;                                 from "not mp_id>=21000" to { :column "mp_id"
+;;                                                             :operation "<="
+;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone columns_raw]
   (println "==================getSimpleClause==================")
-  (print "clause_undone: ")
-  (println clause_undone)
-  (def columns (vec (for [element columns_raw]
-                      (if (not= "" (first element))
-                        (str (first element)
-                             "("
-                             (peek element)
-                             ")")
-                        (peek element)))))
-  (print "columns: ")
-  (println columns)
-  (def clause (if (not= -1 (.indexOf clause_undone "not"))
-                (clojure.string/join " " (subvec clause_undone 1))
-                (clojure.string/join " " (subvec clause_undone 0))))
-  (print "clause: ")
-  (println clause)
-  ;
-  (def oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="})
-  (def operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="})
-  ;
-  (def operation (first (remove nil? (for [element (keys operationsTranslations)]
-                                       (if-not (nil? (clojure.string/index-of clause element)) element)))))
-  (print "operation: ")
-  (println operation)
-  ;
-  (def column (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation)))))
-  (def finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
-                                                    (get oppositeOperations operation)
-                                                    operation)))
-  (def bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation)))))
-  ;
-  (vector column
-          finalOperation
-          (if (and (starts-with? bound "'") (ends-with? bound "'"))
-            (clojure.string/replace bound "'" "\"")
-            bound)))
+  (let [columns (vec (for [element columns_raw]
+                       (if (nil? (get element :function))
+                         (get element :column)
+                         (str (get element :function)
+                              "("
+                              (get element :column)
+                              ")"))))
+        clause (if (not= -1 (.indexOf clause_undone "not"))
+                 (clojure.string/join " " (subvec clause_undone 1))
+                 (clojure.string/join " " (subvec clause_undone 0)))
+        oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="}
+        operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="}
+        operation (first (remove nil? (for [element (keys operationsTranslations)]
+                                        (if-not (nil? (clojure.string/index-of clause element)) element))))
+        column (str (.indexOf columns (subs clause 0 (clojure.string/index-of clause operation))))
+        finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
+                                                     (get oppositeOperations operation)
+                                                     operation))
+        bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation))))]
+    {:column column
+     :operation finalOperation
+     :bound (if (and (starts-with? bound "'") (ends-with? bound "'"))
+              (clojure.string/replace bound "'" "\"")
+              bound)}))
 
 ; parses the clause
 (defn getClause
   [clause_undone columns]
   (println "==================GETCLAUSE==================")
-  (print "clause undone: ")
-  (println clause_undone)
-  (print "columns: ")
-  (println columns)
-  ;
-  (def clauseWord (cond
-                    (not= -1 (.indexOf clause_undone "and"))
-                    "and"
-                    (not= -1 (.indexOf clause_undone "or"))
-                    "or"
-                    :else nil))
-  ;
-  (cond
-    (nil? clauseWord) (vector (getSimpleClause clause_undone columns))
-    (= "and" clauseWord) (apply vector "and" (for [element (parseComplexClause clause_undone clauseWord)]
-                                               (getSimpleClause element columns)))
-    (= "or" clauseWord) (apply vector "or" (for [element (parseComplexClause clause_undone clauseWord)]
-                                             (getSimpleClause element columns)))
-    )
-  )
+  (let [clauseWord (cond
+                     (not= -1 (.indexOf clause_undone "and"))
+                     "and"
+                     (not= -1 (.indexOf clause_undone "or"))
+                     "or"
+                     :else nil)]
+    (cond
+      (nil? clauseWord) {:clauseWord nil :clause (vector (getSimpleClause clause_undone columns))}
+      (= "and" clauseWord) (:clauseWord "and" :clause (for [element (parseComplexClause clause_undone clauseWord)]
+                                                        (getSimpleClause element columns)))
+      (= "or" clauseWord) (:clauseWord "or" :clause (for [element (parseComplexClause clause_undone clauseWord)]
+                                                      (getSimpleClause element columns)))
+      )))
 
 ; mp_id name asc
 ; mp_id asc name desc
@@ -773,7 +708,6 @@
 ; ]
 (defn parseQuery
   [query_raw_raw commands_list]
-  (println "==================PARSEQUERY==================")
   (let [query_raw (joinSeparateCommands query_raw_raw)
         commands (getCommands query_raw commands_list)
         file (nth query_raw (+ 1 (.indexOf query_raw "from")))
@@ -859,3 +793,14 @@
    {:id 1, :name "lol" :function nil}
    {:id 3, :name "rofl" :function nil}
    {:id 47, :name "oi" :function nil}])
+
+(def query_temp
+  {:file "mp-posts_full"
+   :columns [
+             {:column "mp_id"
+              :function nil
+              :file "mp-posts_full"}
+             {:column "full_name"
+              :function nil
+              :file "mp-posts_full"}
+             ]})
