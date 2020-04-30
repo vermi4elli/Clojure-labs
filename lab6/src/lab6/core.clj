@@ -266,7 +266,7 @@
 
 (defn select
   [query commands]
-  ;(println "================SELECT===============")
+  (println "================SELECT===============")
   (cond
     ;first condition
     (and (some #(= "inner join" %) commands)
@@ -300,7 +300,10 @@
             (cond
               (empty? select_functions) select_usual
               (empty? select_usual) (vector select_functions)
-              :else (apply merge (first select_usual) (vector select_functions)))
+              :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                      (if (= (type result) clojure.lang.PersistentArrayMap)
+                        (vector result)
+                        result)))
             )))
 
 ; ========================================
@@ -330,7 +333,7 @@
 
 ; select count(mp_id) from mp-posts_full;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21500 or mp_id<=5000;
-; select distinct row, col from map_zal-skl9 where row>=2 and row<=5;
+; select distinct row, col from map_zal-skl9 where row>=2 and row<=7;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
 ; select distinct mp_id, full_name from mp-posts_full where not mp_id<>21111;
@@ -393,6 +396,7 @@
 ; then returns the data after validating if needed
 (defn checkWhere
   [selected_data commands clause]
+  (println "=====CHECKWHERE=====")
   (print "selected_data: ")
   (println selected_data)
   (if (not= -1 (.indexOf commands "where"))
@@ -427,7 +431,7 @@
         query (get parsed_query :query)
         clause (get parsed_query :clause)
         orderClause (get parsed_query :orderClause)]
-    (printResult (checkWhere (checkSelect query commands) commands clause))))
+    (printResult (orderBy (checkWhere (checkSelect query commands) commands clause) orderClause))))
 
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or mp_id<=9000;
 ; select distinct mp_id, full_name from mp-posts_full where mp_id>=21200 or not full_name<>'Яцик Юлія Григорівна';
@@ -476,6 +480,7 @@
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or not full_name<>'Яцик Юлія Григорівна';
 ; select distinct mp_id, full_name from mps-declarations_rada;
+; select distinct mp_id from mp-posts_full order by mp_id desc;
 
 ; parses the simple clause (e.g.: from "mp_id>=21000" to { :column "mp_id"
 ;                                                          :operation ">="
