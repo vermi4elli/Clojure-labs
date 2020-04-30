@@ -647,80 +647,61 @@
     )
   )
 
-; gets those commands from the commands_list in the vector,
-; which are present in the query
-(defn getCommands
-  [query commands_list]
-  (filterv (fn [x] (if (not= -1 (.indexOf commands_list (clojure.string/lower-case x)))
-                     true
-                     false))
-           query))
-
 ; mp_id name asc
 ; mp_id asc name desc
 (defn getOrderClause
   [query_raw]
   ;(println "==================GETORDERCLAUSE==================")
-  (def query_remade (loop [query []
-                           lastIndex 0
-                           index 0]
-                      (if (< index (count query_raw))
-                        (cond
-                          (or (= "asc" (lower-case (nth query_raw index)))
-                              (= "desc" (lower-case (nth query_raw index))))
-                          (recur (conj query (apply vector (nth query_raw index) (subvec query_raw lastIndex index)))
-                                 (+ 1 index)
-                                 (+ 1 index))
-                          (= index (- (count query_raw) 1))
-                          (recur (conj query (apply vector "asc" (subvec query_raw lastIndex)))
-                                 (+ 1 index)
-                                 (+ 1 index))
-                          :else
-                          (recur query
-                                 lastIndex
-                                 (+ 1 index)))
-                        query)))
-  ;(print "query: ")
-  ;(println query_remade)
-  ;
-  (def firstVector
-    (join "" (vector
-               "["
-               (join " " (for [el query_remade]
-                           (join (for [element (rest el)]
-                                   (str
-                                     "(:"
-                                     element
-                                     " "
-                                     (if (= "desc" (first el))
-                                       "%2"
-                                       "%1")
-                                     ")")))))
-               "]")))
-  ;(print "first: ")
-  ;(println firstVector)
-  (def secondVector
-    (join "" (vector
-               "["
-               (join " " (for [el query_remade]
-                           (join (for [element (rest el)]
-                                   (str
-                                     "(:"
-                                     element
-                                     " "
-                                     (if (= "desc" (first el))
-                                       "%1"
-                                       "%2")
-                                     ")")))))
-               "]")))
-  ;(print "second: ")
-  ;(println secondVector)
-  (str
-    "#(compare "
-    (read-string firstVector)
-    (read-string secondVector)
-    ")")
-  )
+  (let [query_remade (loop [query []
+                            lastIndex 0
+                            index 0]
+                       (if (< index (count query_raw))
+                         (cond
+                           (or (= "asc" (lower-case (nth query_raw index)))
+                               (= "desc" (lower-case (nth query_raw index))))
+                           (recur (conj query (apply vector (nth query_raw index) (subvec query_raw lastIndex index)))
+                                  (+ 1 index)
+                                  (+ 1 index))
+                           (= index (- (count query_raw) 1))
+                           (recur (conj query (apply vector "asc" (subvec query_raw lastIndex)))
+                                  (+ 1 index)
+                                  (+ 1 index))
+                           :else
+                           (recur query
+                                  lastIndex
+                                  (+ 1 index)))
+                         query))
+        firstVector (join "" (vector
+                               "["
+                               (join " " (for [el query_remade]
+                                           (join (for [element (rest el)]
+                                                   (str
+                                                     "(:"
+                                                     element
+                                                     " "
+                                                     (if (= "desc" (first el))
+                                                       "%2"
+                                                       "%1")
+                                                     ")")))))
+                               "]"))
+        secondVector (join "" (vector
+                                "["
+                                (join " " (for [el query_remade]
+                                            (join (for [element (rest el)]
+                                                    (str
+                                                      "(:"
+                                                      element
+                                                      " "
+                                                      (if (= "desc" (first el))
+                                                        "%1"
+                                                        "%2")
+                                                      ")")))))
+                                "]"))]
+    (str
+      "#(compare "
+      (read-string firstVector)
+      (read-string secondVector)
+      ")")))
 
 ; select distinct * from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
 ; select distinct row, col from map_zal-skl9 where row>=12 and row<=13 order by row asc, col desc;
@@ -730,19 +711,15 @@
 (defn getColumnsFromStar
   [file]
   ;(println "==================GETCOLUMNSFROMSTAR==================")
-  ;(print "file: ")
-  ;(println file)
-  (def columns (loop [x 0
-                      result []]
-                 (if (< x (count (keys (first (choose_file (first file))))))
-                   (recur (+ x 1)
-                          (conj result (name (nth (keys (first (choose_file (first file)))) x))))
-                   result)))
-  ;(print "columns: ")
-  ;(println columns)
-  ;(println "==================")
-  (vec (for [el columns]
-         (vector "" el))))
+  (let [columns (loop [x 0
+                               result []]
+                          (if (< x (count (keys (first (choose_file (first file))))))
+                            (recur (+ x 1)
+                                   (conj result (name (nth (keys (first (choose_file (first file)))) x))))
+                            result))]
+    (vec (for [el columns]
+           (vector "" el)))))
+
 
 ; select distinct mp_id, full_name from mp-posts_full order by mp_id;
 
@@ -757,75 +734,65 @@
 ; ]
 (defn checkFunctions
   [query file commands]
-  (def query_commands ["count" "sum" "min"])
-  (def final_query (apply vector (vec (for [column query]
-                                        (cond
-                                          (= "*" column)
-                                          (getColumnsFromStar file)
-                                          (and (not (nil? (clojure.string/index-of column "(")))
-                                               (not (nil? (clojure.string/index-of column ")"))))
-                                          (clojure.string/split column #"[()]")
-                                          :else
-                                          (vector "" column))))))
-  (print "final query: ")
-  (println final_query)
-  (def result (if (= clojure.lang.PersistentVector (type (first (first final_query))))
-                (first final_query)
-                final_query))
-  (print "result: ")
-  (println result)
-  (print "the exception will be thrown: ")
-  (println (and
-             (= -1 (.indexOf commands "group by"))
-             (not= 0 (count (remove nil? (for [column result]
-                                           (if (not= "" (first column))
-                                             (first column)
-                                             nil)))))
-             (not= (count result) (count (remove nil? (for [column result]
-                                                        (if (not= "" (first column))
-                                                          (first column)
-                                                          nil)))))))
-  (print "result: ")
-  (println result)
-  (print "the amount of columns: ")
-  (println (count result))
-  (print "the amount of functions: ")
-  (println (count (remove nil? (for [column result]
-                                 (if (not= "" (first column))
-                                   (first column)
-                                   nil)))))
+  (let [query_commands ["count" "sum" "min"]
+        final_query (apply vector (vec (for [column query]
+                                         (cond
+                                           ; first condition
+                                           (= "*" column)
+                                           ; first action
+                                           (getColumnsFromStar file)
+                                           ; second condition
+                                           (and (not (nil? (clojure.string/index-of column "(")))
+                                                (not (nil? (clojure.string/index-of column ")"))))
+                                           ; second action
+                                           (clojure.string/split column #"[()]")
+                                           ; else condition and action
+                                           :else (vector "" column)))))
+        result (if (= clojure.lang.PersistentVector (type (first (first final_query))))
+                 (first final_query)
+                 final_query)]
+    (cond
+      (and
+        (= -1 (.indexOf commands "group by"))
+        (not= 0 (count (remove nil? (for [column result]
+                                      (if (not= "" (first column))
+                                        (first column)
+                                        nil)))))
+        (not= (count result) (count (remove nil? (for [column result]
+                                                   (if (not= "" (first column))
+                                                     (first column)
+                                                     nil))))))
+      (throw (Exception. "The amount of the functions not equal to the total amount of columns!"))
+      :else result)))
 
-
-  ; select count(mp_id), count(full_name) from mp-posts_full;
-
-  (cond
-    (and
-      (= -1 (.indexOf commands "group by"))
-      (not= 0 (count (remove nil? (for [column result]
-                                    (if (not= "" (first column))
-                                      (first column)
-                                      nil)))))
-      (not= (count result) (count (remove nil? (for [column result]
-                                                 (if (not= "" (first column))
-                                                   (first column)
-                                                   nil))))))
-    (throw (Exception. "The amount of the functions not equal to the total amount of columns!"))
-    :else result)
-  )
+; select count(mp_id), count(full_name) from mp-posts_full;
 
 ; parses the columns and functions
 (defn getColumns
   [query_raw commands file]
   (println "==================GETCOLUMNS==================")
-  (def query (subvec query_raw
-                     (if (not= -1 (.indexOf commands "distinct"))
-                       2
-                       1)
-                     (.indexOf query_raw "from")))
-  (print "query: ")
-  (println query)
-  (checkFunctions query file commands)
-  )
+  (let [query (subvec query_raw
+                      (if (not= -1 (.indexOf commands "distinct"))
+                        2
+                        1)
+                      (.indexOf query_raw "from"))]
+    (checkFunctions query file commands)))
+
+; replaces '_type_' 'join' strings in the query to one '_type_ join' string
+(defn checkJoinFunction
+  [query]
+  (let [indexJoin (.indexOf query "join")
+        indexFull (.indexOf query "full")
+        indexInner (.indexOf query "inner")]
+    (if (not= -1 indexJoin)
+      (if (not= -1 indexFull)
+        (let [before (subvec query 0 indexFull)
+              after (subvec query (+ 1 indexJoin))]
+          (apply conj before "full outer join" after))
+        (let [before (subvec query 0 indexInner)
+              after (subvec query (+ 1 indexJoin))]
+          (apply conj before "inner join" after)))
+      query)))
 
 ; replaces '_command_' 'by' strings in the query to one '_command_ by' string
 (defn checkByFunction
@@ -837,14 +804,26 @@
       (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
     query))
 
+; gets those commands from the commands_list in the vector,
+; which are present in the query
+(defn getCommands
+  [query commands_list]
+  (filterv (fn [x] (if (not= -1 (.indexOf commands_list (clojure.string/lower-case x)))
+                     true
+                     false))
+           query))
+
 ; checks if the input equals 'exit', if so exits with the code 0
 ; else, it changes the separate commands '_command_' 'by' to '_command_ by'
-(defn processQuery
+(defn joinSeparateCommands
   [query_raw_raw]
   (if (= "exit" (first query_raw_raw))
     (System/exit 0)
     (-> (checkByFunction query_raw_raw "order by")
-        (checkByFunction "group by"))))
+        (checkByFunction "group by")
+        (checkJoinFunction))))
+
+; select count(mp_id), count(full_name) from mp-posts_full;
 
 ; parses the query in the format:
 ; [ commands: ["command1 (e.g. select)" "command2 (e.g. from)" ...]
@@ -860,70 +839,53 @@
 (defn parseQuery
   [query_raw_raw commands_list]
   (println "==================PARSEQUERY==================")
-  (def query_raw (processQuery query_raw_raw))
-  (print "query_raw: ")
-  (println query_raw)
-  (def commands (getCommands query_raw commands_list))
-  (print "commands: ")
-  (println commands)
-  (print "The amount of arguments in commands: ")
-  (println (count commands))
-  (def file (cond
-              (not= -1 (.indexOf commands "where"))
-              (subvec query_raw
-                      (+ 1 (.indexOf query_raw "from"))
-                      (.indexOf query_raw "where"))
-              (and (not= -1 (.indexOf commands "order by")) (= -1 (.indexOf commands "where")))
-              (subvec query_raw
-                      (+ 1 (.indexOf query_raw "from"))
-                      (.indexOf query_raw "order by"))
-              (= -1 (.indexOf commands "where")) (subvec query_raw (+ 1 (.indexOf query_raw "from")))))
-  (print "file: ")
-  (println file)
-  (def columns (getColumns query_raw commands file))
-  (print "columns: ")
-  (println columns)
-  (def query (apply conj file columns))
-  (print "query: ")
-  (println query)
-  (def clause (cond
-                (and (not= -1 (.indexOf commands "where"))
-                     (= -1 (.indexOf commands "order by"))
-                     ; other conditions like 'group by' and so on
-                     )
-                (getClause
-                  (subvec query_raw (+ 1 (.indexOf query_raw "where")))
-                  columns)
-                (and (not= -1 (.indexOf commands "where"))
-                     (not= -1 (.indexOf commands "order by")))
-                (getClause
-                  (subvec query_raw (+ 1 (.indexOf query_raw "where")) (.indexOf query_raw "order by"))
-                  columns)
-                (= -1 (.indexOf commands "where")) nil
-                ; other conditions
-                :else nil
-                ))
-  (println "================")
-  (print "clause: ")
-  (println clause)
-  (def orderClause (cond
-                     (not= -1 (.indexOf commands "order by"))
-                     (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
-                     :else nil))
-  (print "orderClause: ")
-  (println orderClause)
-  (vector commands query clause orderClause))
+  (let [query_raw (joinSeparateCommands query_raw_raw)
+        commands (getCommands query_raw commands_list)
+        file (vector (nth query_raw (+ 1 (.indexOf query_raw "from"))))
+        columns (getColumns query_raw commands file)
+        query (apply conj file columns)
+        clause (if (not= -1 (.indexOf commands "where"))
+                 (cond
+                   ; first condition
+                   (and (= -1 (.indexOf commands "order by"))
+                        true
+                        ; other conditions like 'group by' and so on
+                        )
+                   ; first action
+                   (getClause
+                     (subvec query_raw (+ 1 (.indexOf query_raw "where")))
+                     columns)
+                   ; second condition
+                   (and (not= -1 (.indexOf commands "order by"))
+                        true
+                        ; other conditions
+                        )
+                   ; second action
+                   (getClause
+                     (subvec query_raw (+ 1 (.indexOf query_raw "where")) (.indexOf query_raw "order by"))
+                     columns)
+                   ; else condition and action
+                   :else nil
+                   )
+                 nil)
+        orderClause (cond
+                      (not= -1 (.indexOf commands "order by"))
+                      (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
+                      :else nil)]
+    (vector commands query clause orderClause)))
 
 
 (defn -main [& args]
   (println "Write your commands here!")
   (print "~> ")
   (flush)
-  (def commands_list ["select" "from" "where" "distinct" "order by" "group by"])
+  (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on"])
   (loop [input (read-line)]
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
-  (recur (-main))
-  )
+  (recur (-main)))
+
+(def input_test
+  ["select" "*" "from" "mp-posts_full" "inner" "join" "mp" "on" "mp_id"])
 
 (defn inner-join
   [field1 field2 table1 table2]
@@ -948,12 +910,21 @@
 (def test1
   [{:id 2
     :name "kek"}
+   {:id 2
+    :name "lol"}
    {:id 1
     :name "lol"}
    {:id 3
     :name "rofl"}
    {:id 47
     :name "oi"}])
+
+(def test0
+  [{:id 2}
+   {:id 2}
+   {:id 1}
+   {:id 3}
+   {:id 47}])
 
 (def test2
   [{:id 1
@@ -962,9 +933,3 @@
     :surname "keki4"}
    {:id 3
     :surname "rofli4"}])
-
-(def test3
-  {:id "2"})
-
-(def test4
-  {:id 2})
