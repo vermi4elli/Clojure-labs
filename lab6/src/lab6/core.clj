@@ -253,13 +253,16 @@
 
 (defn inner-join
   [field1 field2 table1 table2]
-  (remove nil? (let [table (if (> (count table1) (count table2))
+  (print "INNER JOIN DATA: ")
+  (remove nil? (let [table (if (<= (count table1) (count table2))
                              table1
                              table2)
                      other_table (if (<= (count table1) (count table2))
-                                   table1
-                                   table2)
+                             table2
+                             table1)
                      table_count (count table)]
+                 (println table)
+                 (println other_table)
                  (for [i (range 0 table_count)]
                    (let [elem1 (nth table i)
                          elem2 (remove nil? (for [elem other_table]
@@ -270,6 +273,40 @@
                        (merge (nth table i) (first elem2))
                        nil)))
                  )))
+
+(def test0
+  [{:id 22}
+   {:id 22}
+   {:id 11}
+   {:id 31}
+   {:id 2}])
+
+(def test1
+  [{:mp_id 2
+    :name "kek"}
+   {:mp_id 2
+    :name "lol"}
+   {:mp_id 1
+    :name "lol"}
+   {:mp_id 3
+    :name "rofl"}
+   {:mp_id 47
+    :name "oi"}])
+
+(def test2
+  [{:id 1
+    :surname "loli4"}
+   {:id 2
+    :surname "keki4"}
+   {:id 3
+    :surname "rofli4"}])
+
+(def test-print
+  [{:id 2, :name "kek" :function 123}
+   {:id 2, :name "lol" :function nil}
+   {:id 1, :name "lol" :function nil}
+   {:id 3, :name "rofl" :function nil}
+   {:id 47, :name "oi" :function nil}])
 
 ; ========================================
 ; Implementation for SELECT query
@@ -452,8 +489,6 @@
 ; parses the join clause to the format:
 ; (e.g. from "inner join table2 on table1.column1 = table2.column2"
 ;       to {
-;             :columns1 []
-;             :columns2 []
 ;             :field1 "column1"
 ;             :field2 "column2"
 ;             :file1 "file1"
@@ -461,7 +496,6 @@
 ;          }
 (defn getJoinClause
   [query_raw]
-  (println "====GETJOINCLAUSE====")
   (let [query (subvec query_raw (+ 1 (.indexOf query_raw "on")))
         column_names (vector (first query) (peek query))
         on_columns (vec (for [col column_names]
@@ -879,9 +913,10 @@
 ; select count(mp_id), count(full_name) from mp-posts_full;
 
 ; on ~, inner join, functions + inner join
-; select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mp_id;
 ; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
 
 (def columns_test
@@ -895,51 +930,3 @@
 
 (def input_test
   ["select" "mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id" "from" "mp-posts_full" "inner" "join" "mps-declarations_rada" "on" "mp_id"])
-
-(def test1
-  [{:id 2
-    :name "kek"}
-   {:id 2
-    :name "lol"}
-   {:id 1
-    :name "lol"}
-   {:id 3
-    :name "rofl"}
-   {:id 47
-    :name "oi"}])
-
-(def test0
-  [{:id 2}
-   {:id 2}
-   {:id 1}
-   {:id 3}
-   {:id 47}])
-
-(def test2
-  [{:id 1
-    :surname "loli4"}
-   {:id 2
-    :surname "keki4"}
-   {:id 3
-    :surname "rofli4"}])
-
-(def test3
-  [{:function "123"}])
-
-(def test-print
-  [{:id 2, :name "kek" :function 123}
-   {:id 2, :name "lol" :function nil}
-   {:id 1, :name "lol" :function nil}
-   {:id 3, :name "rofl" :function nil}
-   {:id 47, :name "oi" :function nil}])
-
-(def query_temp
-  {:file "mp-posts_full"
-   :columns [
-             {:column "mp_id"
-              :function nil
-              :file "mp-posts_full"}
-             {:column "full_name"
-              :function nil
-              :file "mp-posts_full"}
-             ]})
