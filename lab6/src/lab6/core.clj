@@ -253,7 +253,6 @@
 
 (defn inner-join
   [field1 field2 table1 table2]
-  (print "INNER JOIN DATA: ")
   (remove nil? (let [table (if (<= (count table1) (count table2))
                              table1
                              table2)
@@ -261,8 +260,6 @@
                              table2
                              table1)
                      table_count (count table)]
-                 (println table)
-                 (println other_table)
                  (for [i (range 0 table_count)]
                    (let [elem1 (nth table i)
                          elem2 (remove nil? (for [elem other_table]
@@ -292,21 +289,6 @@
     :name "rofl"}
    {:mp_id 47
     :name "oi"}])
-
-(def test2
-  [{:id 1
-    :surname "loli4"}
-   {:id 2
-    :surname "keki4"}
-   {:id 3
-    :surname "rofli4"}])
-
-(def test-print
-  [{:id 2, :name "kek" :function 123}
-   {:id 2, :name "lol" :function nil}
-   {:id 1, :name "lol" :function nil}
-   {:id 3, :name "rofl" :function nil}
-   {:id 47, :name "oi" :function nil}])
 
 ; ========================================
 ; Implementation for SELECT query
@@ -865,6 +847,8 @@
     (println clause)
     (print "orderClause: ")
     (println orderClause)
+    (print "joinClause: ")
+    (println joinClause)
     {:commands commands
      :query query
      :clause clause
@@ -918,6 +902,11 @@
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mp_id;
 ; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
+; select mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.fullname = mp-posts_full.full_name;
+; select distinct mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.fullname = mp-posts_full.full_name;
+
+; on ~, full outer join, functions + full outer join
+
 
 (def columns_test
   ["mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id"])
