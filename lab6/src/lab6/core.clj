@@ -248,6 +248,10 @@
 ; ========================================
 ; Implementation for JOIN queries
 
+(defn left-join
+  [field1 field2 table1 table2]
+  ())
+
 ; EXAMPLE OF WORK
 ; (full-outer-join "mp_id" "id" test1 test0)
 ; =>
@@ -304,6 +308,12 @@
    {:mp_id 47
     :name "oi"}])
 
+(def test2
+  [{:id 22
+    :surname "adw"}
+   {:id 22
+    :surname "adw"}])
+
 ; EXAMPLE OF WORK:
 ; (inner-join "id" "mp_id" test0 test1)
 ; => ({:id 2, :mp_id 2, :name "kek"})
@@ -335,90 +345,56 @@
 (defn select
   [query commands joinClause]
   ;(println "================SELECT===============")
-  (cond
-    ;first condition
-    (and (some #(= "inner join" %) commands)
-         true
-         ; other conditions
-         )
-    ; first action
-    (let [field1 (get joinClause :field1)
-          field2 (get joinClause :field2)
-          file1 (get joinClause :file1)
-          file2 (get joinClause :file2)
-          data (inner-join field1 field2 (choose_file file1) (choose_file file2))
-          columns (get query :columns)
-          columns_usual_vector (vec (remove nil? (for [column columns]
-                                                   (if (nil? (get column :function))
-                                                     (keyword (get column :column))
-                                                     nil))))
-          columns_functions_vector (vec (remove nil? (for [column columns]
-                                                       (if (some? (get column :function))
-                                                         column
-                                                         nil))))
-          select_functions (callFunctions columns_functions_vector true data)
-          select_usual (for [line data]
-                          (select-keys line columns_usual_vector))]
-      (cond
-        (empty? select_functions) select_usual
-        (empty? select_usual) (vector select_functions)
-        :else (let [result (apply merge (first select_usual) (vector select_functions))]
-                (if (= (type result) clojure.lang.PersistentArrayMap)
-                  (vector result)
-                  result))))
-    ; second condition
-    (and (some #(= "full outer join" %) commands)
-         true
-         ; other conditions
-         )
-    ; second action
-    (let [field1 (get joinClause :field1)
-          field2 (get joinClause :field2)
-          file1 (get joinClause :file1)
-          file2 (get joinClause :file2)
-          data (full-outer-join field1 field2 (choose_file file1) (choose_file file2))
-          columns (get query :columns)
-          columns_usual_vector (vec (remove nil? (for [column columns]
-                                                   (if (nil? (get column :function))
-                                                     (keyword (get column :column))
-                                                     nil))))
-          columns_functions_vector (vec (remove nil? (for [column columns]
-                                                       (if (some? (get column :function))
-                                                         column
-                                                         nil))))
-          select_functions (callFunctions columns_functions_vector true data)
-          select_usual (for [line data]
-                         (select-keys line columns_usual_vector))]
-      (cond
-        (empty? select_functions) select_usual
-        (empty? select_usual) (vector select_functions)
-        :else (let [result (apply merge (first select_usual) (vector select_functions))]
-                (if (= (type result) clojure.lang.PersistentArrayMap)
-                  (vector result)
-                  result))))
-    :else (let [columns (get query :columns)
-                file (get query :file)
-                columns_usual_vector (vec (remove nil? (for [column columns]
-                                                    (if (nil? (get column :function))
-                                                      (keyword (get column :column))
-                                                      nil))))
-                columns_functions_vector (vec (remove nil? (for [column columns]
-                                                        (if (some? (get column :function))
-                                                          column
-                                                          nil))))
-                select_functions (callFunctions columns_functions_vector false nil)
-                select_usual (for [line (choose_file file)]
-                               (select-keys line columns_usual_vector))]
-            ;(print "select_usual: ")
-            ;(println select_usual)
-            (cond
-              (empty? select_functions) select_usual
-              (empty? select_usual) (vector select_functions)
-              :else (let [result (apply merge (first select_usual) (vector select_functions))]
-                      (if (= (type result) clojure.lang.PersistentArrayMap)
-                        (vector result)
-                        result)))
-            )))
+  (let [field1 (if (nil? joinClause)
+                 nil
+                 (get joinClause :field1))
+        field2 (if (nil? joinClause)
+                 nil
+                 (get joinClause :field2))
+        file1 (if (nil? joinClause)
+                 nil
+                 (get joinClause :file1))
+        file2 (if (nil? joinClause)
+                 nil
+                 (get joinClause :file2))
+        data (cond
+               ; first condition
+               (not= -1 (.indexOf commands "inner join"))
+               ; first action
+               (inner-join field1 field2 (choose_file file1) (choose_file file2))
+               ; second condition
+               (not= -1 (.indexOf commands "full outer join"))
+               ; second action
+               (full-outer-join field1 field2 (choose_file file1) (choose_file file2))
+               ; third condition
+               (not= -1 (.indexOf commands "left join"))
+               ; third action
+               (left-join field1 field2 (choose_file file1) (choose_file file2))
+               ; else
+               :else (choose_file (get query :file)))
+        columns (get query :columns)
+        columns_usual_vector (vec (remove nil? (for [column columns]
+                                                 (if (nil? (get column :function))
+                                                   (keyword (get column :column))
+                                                   nil))))
+        columns_functions_vector (vec (remove nil? (for [column columns]
+                                                     (if (some? (get column :function))
+                                                       column
+                                                       nil))))
+        select_functions (callFunctions columns_functions_vector
+                                        (if (nil? joinClause)
+                                          false
+                                          true)
+                                        data)
+        select_usual (for [line data]
+                       (select-keys line columns_usual_vector))]
+    (cond
+      (empty? select_functions) select_usual
+      (empty? select_usual) (vector select_functions)
+      :else (let [result (apply merge (first select_usual) (vector select_functions))]
+              (if (= (type result) clojure.lang.PersistentArrayMap)
+                (vector result)
+                result)))))
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
