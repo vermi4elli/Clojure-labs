@@ -291,7 +291,7 @@
     :surname "adw"}
    {:id 11
     :surname "adw"}
-   {:id 31
+   {:id 3
     :surname "adw"}
    {:id 2
     :surname "adw"}])
@@ -315,29 +315,45 @@
     :surname "adw"}])
 
 ; EXAMPLE OF WORK:
-; (inner-join "id" "mp_id" test0 test1)
-; => ({:id 2, :mp_id 2, :name "kek"})
-; (inner-join "mp_id" "id" test1 test0)
-; => ({:mp_id 2, :name "kek", :id 2} {:mp_id 2, :name "lol", :id 2})
+;(inner-join "id" "mp_id" test0 test1)
+;=>
+;({:id 3, :surname "adw", :mp_id 3, :name "rofl"}
+; {:id 2, :surname "adw", :mp_id 2, :name "kek"}
+; {:id 2, :surname "adw", :mp_id 2, :name "lol"})
+;
+;(inner-join "mp_id" "id" test1 test0)
+;=>
+;({:mp_id 2, :name "kek", :id 2, :surname "adw"}
+; {:mp_id 2, :name "lol", :id 2, :surname "adw"}
+; {:mp_id 3, :name "rofl", :id 3, :surname "adw"})
 (defn inner-join
   [field1 field2 table1 table2]
-  (remove nil? (let [table (if (<= (count table1) (count table2))
-                             table1
-                             table2)
-                     other_table (if (<= (count table1) (count table2))
-                             table2
-                             table1)
-                     table_count (count table)]
-                 (for [i (range 0 table_count)]
-                   (let [elem1 (nth table i)
-                         elem2 (remove nil? (for [elem other_table]
-                                              (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
-                                                elem
-                                                nil)))]
-                     (if (not= 0 (count elem2))
-                       (merge (nth table i) (first elem2))
-                       nil)))
-                 )))
+  (remove nil? (flatten (let [table (if (<= (count table1) (count table2))
+                                      table1
+                                      table2)
+                              other_table (if (<= (count table1) (count table2))
+                                            table2
+                                            table1)
+                              table_count (count table)]
+                          (for [i (range 0 table_count)]
+                            (let [elem1 (nth table i)
+                                  elem2 (remove nil?
+                                                (loop [index 0
+                                                       limit (count other_table)
+                                                       elements []]
+                                                  (if (< index limit)
+                                                    (recur
+                                                      (+' 1 index)
+                                                      limit
+                                                      (if (= (get elem1 (keyword field1))
+                                                             (get (nth other_table index) (keyword field2)))
+                                                        (conj elements (nth other_table index))
+                                                        elements))
+                                                    elements)))]
+                              (if (not= 0 (count elem2))
+                                (for [el elem2]
+                                           (merge (nth table i) el))
+                                nil)))))))
 
 ; ========================================
 ; Implementation for SELECT query
