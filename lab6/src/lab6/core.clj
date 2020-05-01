@@ -422,6 +422,11 @@
         orderClause (get parsed_query :orderClause)]
     (printResult (orderBy (checkWhere (checkSelect query commands) commands clause) orderClause))))
 
+(defn getJoinClause
+  [columns commands query_raw]
+  (let [query ()])
+  )
+
 ; parses the multi conditional clause to the format:
 ; (e.g. from "mp_id>=21000 and mp_id<=21200"
 ;       to {
@@ -638,15 +643,21 @@
   [query]
   (let [indexJoin (.indexOf query "join")
         indexFull (.indexOf query "full")
-        indexInner (.indexOf query "inner")]
+        indexInner (.indexOf query "inner")
+        indexLeft (.indexOf query "left")]
     (if (not= -1 indexJoin)
       (if (not= -1 indexFull)
         (let [before (subvec query 0 indexFull)
               after (subvec query (+ 1 indexJoin))]
           (apply conj before "full outer join" after))
-        (let [before (subvec query 0 indexInner)
-              after (subvec query (+ 1 indexJoin))]
-          (apply conj before "inner join" after)))
+        (if (not= -1 indexInner)
+          (let [before (subvec query 0 indexInner)
+                after (subvec query (+ 1 indexJoin))]
+            (apply conj before "inner join" after))
+          (let [before (subvec query 0 indexLeft)
+                after (subvec query (+ 1 indexJoin))]
+            (apply conj before "left join" after)))
+        )
       query)))
 
 ; replaces '_command_' 'by' strings in the query to one '_command_ by' string
@@ -740,7 +751,24 @@
         orderClause (cond
                       (not= -1 (.indexOf commands "order by"))
                       (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
-                      :else nil)]
+                      :else nil)
+        joinClause (if (or (not= -1 (.indexOf commands "inner join"))
+                           (not= -1 (.indexOf commands "full outer join"))
+                           (not= -1 (.indexOf commands "left join")))
+                     (cond
+                       ; first condition
+                       (not= -1 (.indexOf commands "where"))
+                       ;first action
+                       (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "where")))
+                       ; second condition
+                       (and (= -1 (.indexOf commands "where"))
+                            (not= -1 (.indexOf commands "order by")))
+                       ; second action
+                       (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "order by")))
+                       ; third condition and action
+                       :else (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from"))))
+                       )
+                     nil)]
     (print "commands: ")
     (println commands)
     (print "query: ")
@@ -752,7 +780,9 @@
     {:commands commands
      :query query
      :clause clause
-     :orderClause orderClause}))
+     :orderClause orderClause
+     :joinClause joinClause}))
+; yet to add the JOIN query
 
 
 (defn -main [& args]
