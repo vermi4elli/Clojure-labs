@@ -246,11 +246,69 @@
                                          ")")) (callFunction column usedJoin data)))))
 
 ; ========================================
-; Implementation for JOIN query
+; Implementation for JOIN queries
 
+; EXAMPLE OF WORK
+; (full-outer-join "mp_id" "id" test1 test0)
+; =>
+; ({:mp_id 2, :name "kek", :id 2, :surname "adw"}
+;  {:mp_id 2, :name "lol", :id 2, :surname "adw"}
+;  {:mp_id 1, :name "lol", :id nil, :surname nil}
+;  {:mp_id 3, :name "rofl", :id nil, :surname nil}
+;  {:mp_id 47, :name "oi", :id nil, :surname nil})
 (defn full-outer-join
-  [field1 field2 table1 table2])
+  [field1 field2 table1 table2]
+  (remove nil? (let [table (if (<= (count table1) (count table2))
+                table1
+                table2)
+        other_table (if (<= (count table1) (count table2))
+                      table2
+                      table1)
+        table_count (count table)]
+    (for [i (range 0 table_count)]
+      (let [elem1 (nth table i)
+            elem2_raw (remove nil? (for [elem other_table]
+                                 (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
+                                   elem
+                                   nil)))
+            elem2 (if (some some? elem2_raw)
+                    (first elem2_raw)
+                    (apply merge (for [word (keys (first other_table))]
+                                   (assoc {} word nil))))]
+        (if (not= 0 (count elem2))
+          (merge (nth table i) elem2)
+          nil)))
+    )))
 
+(def test0
+  [{:id 22
+    :surname "adw"}
+   {:id 22
+    :surname "adw"}
+   {:id 11
+    :surname "adw"}
+   {:id 31
+    :surname "adw"}
+   {:id 2
+    :surname "adw"}])
+
+(def test1
+  [{:mp_id 2
+    :name "kek"}
+   {:mp_id 2
+    :name "lol"}
+   {:mp_id 1
+    :name "lol"}
+   {:mp_id 3
+    :name "rofl"}
+   {:mp_id 47
+    :name "oi"}])
+
+; EXAMPLE OF WORK:
+; (inner-join "id" "mp_id" test0 test1)
+; => ({:id 2, :mp_id 2, :name "kek"})
+; (inner-join "mp_id" "id" test1 test0)
+; => ({:mp_id 2, :name "kek", :id 2} {:mp_id 2, :name "lol", :id 2})
 (defn inner-join
   [field1 field2 table1 table2]
   (remove nil? (let [table (if (<= (count table1) (count table2))
@@ -270,25 +328,6 @@
                        (merge (nth table i) (first elem2))
                        nil)))
                  )))
-
-(def test0
-  [{:id 22}
-   {:id 22}
-   {:id 11}
-   {:id 31}
-   {:id 2}])
-
-(def test1
-  [{:mp_id 2
-    :name "kek"}
-   {:mp_id 2
-    :name "lol"}
-   {:mp_id 1
-    :name "lol"}
-   {:mp_id 3
-    :name "rofl"}
-   {:mp_id 47
-    :name "oi"}])
 
 ; ========================================
 ; Implementation for SELECT query
