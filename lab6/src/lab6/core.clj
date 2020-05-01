@@ -186,7 +186,7 @@
 
 (defn Min
   [file column]
-  (let [file_column (for [line (choose_file file)]
+  (let [file_column (for [line file]
                       (get line (keyword column)))
         limit (count file_column)
         is_string (= (type (first file_column)) java.lang.String)]
@@ -205,7 +205,7 @@
 
 (defn Sum
   [file column]
-  (let [file_column (for [line (choose_file file)]
+  (let [file_column (for [line file]
                       (get line (keyword column)))
         limit (count file_column)]
     (if (not= java.lang.Long (type (get (first file_column) (keyword column))))
@@ -219,14 +219,17 @@
 
 (defn Count
   [file column]
-  (let [file_column (for [line (choose_file file)]
+  (let [file_column (for [line file]
                       (get line (keyword column)))]
     (count (remove nil? file_column)))
   )
 
 (defn callFunction
-  [column_raw]
-  (let [file (get column_raw :file)
+  [column_raw usedJoin data]
+  (let [file_name (get column_raw :file)
+        file (if usedJoin
+               data
+               (choose_file file_name))
         column (get column_raw :column)]
     (case (get column_raw :function)
       "count" (Count file column)
@@ -235,12 +238,12 @@
     )))
 
 (defn callFunctions
-  [columns]
+  [columns usedJoin data]
   (apply merge (for [column columns]
                  (assoc {} (keyword (str (get column :function)
                                          "("
                                          (get column :column)
-                                         ")")) (callFunction column)))))
+                                         ")")) (callFunction column usedJoin data)))))
 
 ; ========================================
 ; Implementation for JOIN query
@@ -272,7 +275,7 @@
 ; Implementation for SELECT query
 
 (defn select
-  [query commands]
+  [query commands joinClause]
   ;(println "================SELECT===============")
   (cond
     ;first condition
@@ -281,7 +284,30 @@
          ; other conditions
          )
     ; first action
-    (inner-join query "" "" "")
+    (let [field1 (get joinClause :field1)
+          field2 (get joinClause :field2)
+          file1 (get joinClause :file1)
+          file2 (get joinClause :file2)
+          data (inner-join field1 field2 (choose_file file1) (choose_file file2))
+          columns (get query :columns)
+          columns_usual_vector (vec (remove nil? (for [column columns]
+                                                   (if (nil? (get column :function))
+                                                     (keyword (get column :column))
+                                                     nil))))
+          columns_functions_vector (vec (remove nil? (for [column columns]
+                                                       (if (some? (get column :function))
+                                                         column
+                                                         nil))))
+          select_functions (callFunctions columns_functions_vector true data)
+          select_usual (for [line data]
+                          (select-keys line columns_usual_vector))]
+      (cond
+        (empty? select_functions) select_usual
+        (empty? select_usual) (vector select_functions)
+        :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                (if (= (type result) clojure.lang.PersistentArrayMap)
+                  (vector result)
+                  result))))
     ; second condition
     (and (some #(= "full outer join" %) commands)
          true
@@ -299,7 +325,7 @@
                                                         (if (some? (get column :function))
                                                           column
                                                           nil))))
-                select_functions (callFunctions columns_functions_vector)
+                select_functions (callFunctions columns_functions_vector false nil)
                 select_usual (for [line (choose_file file)]
                                (select-keys line columns_usual_vector))]
             ;(print "select_usual: ")
@@ -317,8 +343,8 @@
 ; Implementation for SELECT DISTINCT query
 
 (defn select_distinct
-  [query commands]
-  (vec (set (select query commands))))
+  [query commands joinClause]
+  (vec (set (select query commands joinClause))))
 
 ; ========================================
 ; Implementation for WHERE query
@@ -400,11 +426,11 @@
     selected_data))
 
 (defn checkSelect
-  [query commands]
+  [query commands joinClause]
   ;(println "==================CHECKSELECT==================")
   (if (not= -1 (.indexOf commands "distinct"))
-    (select_distinct query commands)
-    (select query commands)))
+    (select_distinct query commands joinClause)
+    (select query commands joinClause)))
 
 (defn printResult
   [query]
@@ -419,12 +445,39 @@
   (let [commands (get parsed_query :commands)
         query (get parsed_query :query)
         clause (get parsed_query :clause)
-        orderClause (get parsed_query :orderClause)]
-    (printResult (orderBy (checkWhere (checkSelect query commands) commands clause) orderClause))))
+        orderClause (get parsed_query :orderClause)
+        joinClause (get parsed_query :joinClause)]
+    (printResult (orderBy (checkWhere (checkSelect query commands joinClause) commands clause) orderClause))))
 
+; parses the join clause to the format:
+; (e.g. from "inner join table2 on table1.column1 = table2.column2"
+;       to {
+;             :columns1 []
+;             :columns2 []
+;             :field1 "column1"
+;             :field2 "column2"
+;             :file1 "file1"
+;             :file2 "file2"
+;          }
 (defn getJoinClause
-  [columns commands query_raw]
-  (let [query ()])
+  [query_raw]
+  (println "====GETJOINCLAUSE====")
+  (let [query (subvec query_raw (+ 1 (.indexOf query_raw "on")))
+        column_names (vector (first query) (peek query))
+        on_columns (vec (for [col column_names]
+                          (let [indexDot (index-of col ".")
+                                column (subs col (+ 1 indexDot))
+                                file (subs col 0 indexDot)]
+                            {:column column
+                             :file file})))
+        first_file (get (first on_columns) :file)
+        second_file (get (peek on_columns) :file)
+        first_field (get (first on_columns) :column)
+        second_field (get (peek on_columns) :column)]
+    {:field1 first_field
+     :field2 second_field
+     :file1 first_file
+     :file2 second_file})
   )
 
 ; parses the multi conditional clause to the format:
@@ -681,6 +734,7 @@
 
 ; checks if the input equals 'exit', if so exits with the code 0
 ; else, it changes the separate commands '_command_' 'by' to '_command_ by'
+;              and the separate commands '_type_' 'join' to '_type_ join'
 (defn joinSeparateCommands
   [query_raw_raw]
   (if (= "exit" (first query_raw_raw))
@@ -759,14 +813,14 @@
                        ; first condition
                        (not= -1 (.indexOf commands "where"))
                        ;first action
-                       (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "where")))
+                       (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "where")))
                        ; second condition
                        (and (= -1 (.indexOf commands "where"))
                             (not= -1 (.indexOf commands "order by")))
                        ; second action
-                       (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "order by")))
+                       (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "order by")))
                        ; third condition and action
-                       :else (getJoinClause columns (subvec query_raw (+ 2 (.indexOf query_raw "from"))))
+                       :else (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from"))))
                        )
                      nil)]
     (print "commands: ")
@@ -823,6 +877,12 @@
 ; select mp_id, full_name, count(mp_id), count(full_name) from mp-posts_full order by mp_id asc;
 ; select count(mp_id) from mp-posts_full;
 ; select count(mp_id), count(full_name) from mp-posts_full;
+
+; on ~, inner join, functions + inner join
+; select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
 
 (def columns_test
   ["mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id"])
