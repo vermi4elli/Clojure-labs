@@ -372,7 +372,30 @@
          ; other conditions
          )
     ; second action
-    (full-outer-join query "" "" "")
+    (let [field1 (get joinClause :field1)
+          field2 (get joinClause :field2)
+          file1 (get joinClause :file1)
+          file2 (get joinClause :file2)
+          data (full-outer-join field1 field2 (choose_file file1) (choose_file file2))
+          columns (get query :columns)
+          columns_usual_vector (vec (remove nil? (for [column columns]
+                                                   (if (nil? (get column :function))
+                                                     (keyword (get column :column))
+                                                     nil))))
+          columns_functions_vector (vec (remove nil? (for [column columns]
+                                                       (if (some? (get column :function))
+                                                         column
+                                                         nil))))
+          select_functions (callFunctions columns_functions_vector true data)
+          select_usual (for [line data]
+                         (select-keys line columns_usual_vector))]
+      (cond
+        (empty? select_functions) select_usual
+        (empty? select_usual) (vector select_functions)
+        :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                (if (= (type result) clojure.lang.PersistentArrayMap)
+                  (vector result)
+                  result))))
     :else (let [columns (get query :columns)
                 file (get query :file)
                 columns_usual_vector (vec (remove nil? (for [column columns]
@@ -945,7 +968,11 @@
 ; select distinct mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.fullname = mp-posts_full.full_name;
 
 ; on ~, full outer join, functions + full outer join
-
+; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 full outer join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
+; select mps-declarations_rada.mp_id from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mp_id;
 
 (def columns_test
   ["mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id"])
