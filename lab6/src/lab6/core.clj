@@ -248,9 +248,27 @@
 ; ========================================
 ; Implementation for JOIN queries
 
+; EXAMPLE OF WORK
+; (left-join "id" "mp_id" test3 test4)
 (defn left-join
   [field1 field2 table1 table2]
-  ())
+  (remove nil? (let [table table1
+                     other_table table2
+                     table_count (count table)]
+                 (for [i (range 0 table_count)]
+                   (let [elem1 (nth table i)
+                         elem2_raw (remove nil? (for [elem other_table]
+                                                  (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
+                                                    elem
+                                                    nil)))
+                         elem2 (if (some some? elem2_raw)
+                                 (first elem2_raw)
+                                 (apply merge (for [word (keys (first other_table))]
+                                                (assoc {} word nil))))]
+                     (if (not= 0 (count elem2))
+                       (merge (nth table i) elem2)
+                       nil)))
+                 )))
 
 ; EXAMPLE OF WORK
 ; (full-outer-join "mp_id" "id" test1 test0)
@@ -262,7 +280,7 @@
 ;  {:mp_id 47, :name "oi", :id nil, :surname nil})
 (defn full-outer-join
   [field1 field2 table1 table2]
-  (remove nil? (let [table (if (<= (count table1) (count table2))
+  (remove nil? (flatten (let [table (if (<= (count table1) (count table2))
                 table1
                 table2)
         other_table (if (<= (count table1) (count table2))
@@ -271,18 +289,28 @@
         table_count (count table)]
     (for [i (range 0 table_count)]
       (let [elem1 (nth table i)
-            elem2_raw (remove nil? (for [elem other_table]
-                                 (if (= (get elem1 (keyword field1)) (get elem (keyword field2)))
-                                   elem
-                                   nil)))
+            elem2_raw (remove nil?
+                              (loop [index 0
+                                     limit (count other_table)
+                                     elements []]
+                                (if (< index limit)
+                                  (recur
+                                    (+' 1 index)
+                                    limit
+                                    (if (= (get elem1 (keyword field1))
+                                           (get (nth other_table index) (keyword field2)))
+                                      (conj elements (nth other_table index))
+                                      elements))
+                                  elements)))
             elem2 (if (some some? elem2_raw)
-                    (first elem2_raw)
-                    (apply merge (for [word (keys (first other_table))]
-                                   (assoc {} word nil))))]
+                    elem2_raw
+                    (vector (apply merge (for [word (keys (first other_table))]
+                                           (assoc {} word nil)))))]
         (if (not= 0 (count elem2))
-          (merge (nth table i) elem2)
+          (for [el elem2]
+            (merge (nth table i) el))
           nil)))
-    )))
+    ))))
 
 (def test0
   [{:id 22
@@ -313,6 +341,29 @@
     :surname "adw"}
    {:id 22
     :surname "adw"}])
+
+(def test3
+  [
+   {:id 1}
+   {:id 2}
+   {:id 3}
+   {:id 4}
+   {:id 5}
+   {:id 6}
+   {:id 7}
+   {:id 8}
+   {:id 9}
+   {:id 10}
+   ])
+
+(def test4
+  [
+   {:mp_id 1}
+   {:mp_id 2}
+   {:mp_id 3}
+   {:mp_id 100}
+   {:mp_id 150}
+   ])
 
 ; EXAMPLE OF WORK:
 ;(inner-join "id" "mp_id" test0 test1)
@@ -352,7 +403,7 @@
                                                     elements)))]
                               (if (not= 0 (count elem2))
                                 (for [el elem2]
-                                           (merge (nth table i) el))
+                                  (merge (nth table i) el))
                                 nil)))))))
 
 ; ========================================
