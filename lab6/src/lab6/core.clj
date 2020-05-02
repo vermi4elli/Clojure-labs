@@ -311,24 +311,43 @@
                                 nil)))))))
 
 ; EXAMPLE OF WORK
-; (full-outer-join "id" "mp_id" test3 test4)
+;(full-outer-join test_column1 test_column2 test1 test2)
 ;=>
-;[{:id 1, :mp_id 1}
-; {:id 2, :mp_id 2}
-; {:id 3, :mp_id 3}
-; {:id 3, :mp_id 3}
-; {:id 4, :mp_id nil}
-; {:id 5, :mp_id nil}
-; {:id 6, :mp_id nil}
-; {:id 7, :mp_id nil}
-; {:id 8, :mp_id nil}
-; {:id 9, :mp_id nil}
-; {:id 10, :mp_id nil}
-; {:id nil, :mp_id 100}
-; {:id nil, :mp_id 150}]
+;[{:test1.id 1, :test2.mp_id 1}
+; {:test1.id 2, :test2.mp_id 2}
+; {:test1.id 3, :test2.mp_id 3}
+; {:test1.id 3, :test2.mp_id 3}
+; {:test1.id 4, :test2.mp_id nil}
+; {:test1.id 5, :test2.mp_id nil}
+; {:test1.id 6, :test2.mp_id nil}
+; {:test1.id 7, :test2.mp_id nil}
+; {:test1.id 8, :test2.mp_id nil}
+; {:test1.id 9, :test2.mp_id nil}
+; {:test1.id 10, :test2.mp_id nil}
+; {:test1.id nil, :test2.mp_id 100}
+; {:test1.id nil, :test2.mp_id 150}]
+;(full-outer-join test_column2 test_column1 test2 test1)
+;=>
+;[{:test2.mp_id 1, :test1.id 1}
+; {:test2.mp_id 2, :test1.id 2}
+; {:test2.mp_id 3, :test1.id 3}
+; {:test2.mp_id 3, :test1.id 3}
+; {:test2.mp_id 100, :test1.id nil}
+; {:test2.mp_id 150, :test1.id nil}
+; {:test2.mp_id nil, :test1.id 4}
+; {:test2.mp_id nil, :test1.id 5}
+; {:test2.mp_id nil, :test1.id 6}
+; {:test2.mp_id nil, :test1.id 7}
+; {:test2.mp_id nil, :test1.id 8}
+; {:test2.mp_id nil, :test1.id 9}
+; {:test2.mp_id nil, :test1.id 10}]
 (defn full-outer-join
-  [field1 field2 table1 table2]
-  (let [left_outer_join (vec (left-join field1 field2 table1 table2))
+  [column1 column2 table1_raw table2_raw]
+  (let [left_outer_join (vec (left-join column1 column2 table1_raw table2_raw))
+        table1 (modifyColumnNames table1_raw (get column1 :file))
+        table2 (modifyColumnNames table2_raw (get column2 :file))
+        field1 (keyword (str (get column1 :file) "." (get column1 :field)))
+        field2 (keyword (str (get column2 :file) "." (get column2 :field)))
         table1_empty_cell (apply merge (for [word (keys (first table1))]
                                          (assoc {} word nil)))
         right_anti_join (vec (remove nil? (for [elem1 table2]
