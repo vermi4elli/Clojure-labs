@@ -279,47 +279,40 @@
                                 nil)))))))
 
 ; EXAMPLE OF WORK
-; (full-outer-join "mp_id" "id" test1 test0)
-; =>
-; ({:mp_id 2, :name "kek", :id 2, :surname "adw"}
-;  {:mp_id 2, :name "lol", :id 2, :surname "adw"}
-;  {:mp_id 1, :name "lol", :id nil, :surname nil}
-;  {:mp_id 3, :name "rofl", :id nil, :surname nil}
-;  {:mp_id 47, :name "oi", :id nil, :surname nil})
 ; (full-outer-join "id" "mp_id" test3 test4)
+;=>
+;[{:id 1, :mp_id 1}
+; {:id 2, :mp_id 2}
+; {:id 3, :mp_id 3}
+; {:id 3, :mp_id 3}
+; {:id 4, :mp_id nil}
+; {:id 5, :mp_id nil}
+; {:id 6, :mp_id nil}
+; {:id 7, :mp_id nil}
+; {:id 8, :mp_id nil}
+; {:id 9, :mp_id nil}
+; {:id 10, :mp_id nil}
+; {:id nil, :mp_id 100}
+; {:id nil, :mp_id 150}]
 (defn full-outer-join
   [field1 field2 table1 table2]
-  (remove nil? (flatten (let [table (if (<= (count table1) (count table2))
-                table1
-                table2)
-        other_table (if (<= (count table1) (count table2))
-                      table2
-                      table1)
-        table_count (count table)]
-    (for [i (range 0 table_count)]
-      (let [elem1 (nth table i)
-            elem2_raw (remove nil?
-                              (loop [index 0
-                                     limit (count other_table)
-                                     elements []]
-                                (if (< index limit)
-                                  (recur
-                                    (+' 1 index)
-                                    limit
-                                    (if (= (get elem1 (keyword field1))
-                                           (get (nth other_table index) (keyword field2)))
-                                      (conj elements (nth other_table index))
-                                      elements))
-                                  elements)))
-            elem2 (if (some some? elem2_raw)
-                    elem2_raw
-                    (vector (apply merge (for [word (keys (first other_table))]
-                                           (assoc {} word nil)))))]
-        (if (not= 0 (count elem2))
-          (for [el elem2]
-            (merge (nth table i) el))
-          nil)))
-    ))))
+  (let [left_outer_join (vec (left-join field1 field2 table1 table2))
+        table1_empty_cell (apply merge (for [word (keys (first table1))]
+                                         (assoc {} word nil)))
+        right_anti_join (vec (remove nil? (for [elem1 table2]
+                                            (let [elem1_value (get elem1 (keyword field2))
+                                                  elem2 (if (some some?
+                                                                  (for [el table1]
+                                                                    (if (= (get el (keyword field1))
+                                                                           elem1_value)
+                                                                      1
+                                                                      nil)))
+                                                          nil
+                                                          table1_empty_cell)]
+                                              (if (some? elem2)
+                                                (merge elem2 elem1)
+                                                nil)))))]
+    (apply conj left_outer_join right_anti_join)))
 
 (def test0
   [{:id 22
