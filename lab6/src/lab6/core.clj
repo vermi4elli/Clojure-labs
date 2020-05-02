@@ -259,12 +259,34 @@
                                   (get element col_name)))))))
 
 ; EXAMPLE OF WORK
-; (left-join "id" "mp_id" test3 test4)
+;(left-join test_column1 test_column2 test1 test2)
+;=>
+;({:test1.id 1, :test2.mp_id 1}
+; {:test1.id 2, :test2.mp_id 2}
+; {:test1.id 3, :test2.mp_id 3}
+; {:test1.id 3, :test2.mp_id 3}
+; {:test1.id 4, :test2.mp_id nil}
+; {:test1.id 5, :test2.mp_id nil}
+; {:test1.id 6, :test2.mp_id nil}
+; {:test1.id 7, :test2.mp_id nil}
+; {:test1.id 8, :test2.mp_id nil}
+; {:test1.id 9, :test2.mp_id nil}
+; {:test1.id 10, :test2.mp_id nil})
+;(left-join test_column2 test_column1 test2 test1)
+;=>
+;({:test2.mp_id 1, :test1.id 1}
+; {:test2.mp_id 2, :test1.id 2}
+; {:test2.mp_id 3, :test1.id 3}
+; {:test2.mp_id 3, :test1.id 3}
+; {:test2.mp_id 100, :test1.id nil}
+; {:test2.mp_id 150, :test1.id nil})
 (defn left-join
-  [field1 field2 table1 table2]
-  (remove nil? (flatten (let [table table1
-                              other_table table2
-                              table_count (count table)]
+  [column1 column2 table1 table2]
+  (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
+                              other_table (modifyColumnNames table2 (get column2 :file))
+                              table_count (count table)
+                              field1 (keyword (str (get column1 :file) "." (get column1 :field)))
+                              field2 (keyword (str (get column2 :file) "." (get column2 :field)))]
                           (for [i (range 0 table_count)]
                             (let [elem1 (nth table i)
                                   elem2_raw (remove nil? (loop [index 0
@@ -274,8 +296,8 @@
                                                              (recur
                                                                (+' 1 index)
                                                                limit
-                                                               (if (= (get elem1 (keyword field1))
-                                                                      (get (nth other_table index) (keyword field2)))
+                                                               (if (= (get elem1 field1)
+                                                                      (get (nth other_table index) field2))
                                                                  (conj elements (nth other_table index))
                                                                  elements))
                                                              elements)))
