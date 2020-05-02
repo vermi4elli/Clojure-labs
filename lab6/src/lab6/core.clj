@@ -376,10 +376,6 @@
                                               (if (some? elem1)
                                                 (merge elem1 elem2)
                                                 nil)))))]
-    (print "left_join: ")
-    (println left_outer_join)
-    (print "right_join: ")
-    (println right_anti_join)
     (apply conj left_outer_join right_anti_join)))
 
 ; EXAMPLE OF WORK:
@@ -471,12 +467,6 @@
                                         data)
         select_usual (for [line data]
                        (select-keys line columns_usual_vector))]
-    (print "data: ")
-    (println data)
-    (print "columns usual: ")
-    (println columns_usual_vector)
-    (print "columns functions: ")
-    (println columns_functions_vector)
     (cond
       (empty? select_functions) select_usual
       (empty? select_usual) (vector select_functions)
@@ -1032,3 +1022,5 @@
 ; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id where mps-declarations_rada.mp_id=15816;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id where mps-declarations_rada.mp_id=15816 order by mp-posts_full.full_name;
