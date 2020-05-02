@@ -338,34 +338,22 @@
 ; EXAMPLE OF WORK
 ;(full-outer-join test_column1 test_column2 test1 test2)
 ;=>
-;[{:test1.id 1, :test2.mp_id 1}
-; {:test1.id 2, :test2.mp_id 2}
-; {:test1.id 3, :test2.mp_id 3}
-; {:test1.id 3, :test2.mp_id 3}
-; {:test1.id 4, :test2.mp_id nil}
-; {:test1.id 5, :test2.mp_id nil}
-; {:test1.id 6, :test2.mp_id nil}
-; {:test1.id 7, :test2.mp_id nil}
-; {:test1.id 8, :test2.mp_id nil}
-; {:test1.id 9, :test2.mp_id nil}
-; {:test1.id 10, :test2.mp_id nil}
-; {:test1.id nil, :test2.mp_id 100}
-; {:test1.id nil, :test2.mp_id 150}]
+;[{:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3}
+; {:test1.id 3, :test1.1 3, :test2.mp_id nil, :test2.1 nil}
+; {:test1.id 4, :test1.1 4, :test2.mp_id nil, :test2.1 nil}
+; {:test1.id nil, :test1.1 nil, :test2.mp_id 100, :test2.1 4}
+; {:test1.id nil, :test1.1 nil, :test2.mp_id 150, :test2.1 5}]
 ;(full-outer-join test_column2 test_column1 test2 test1)
 ;=>
-;[{:test2.mp_id 1, :test1.id 1}
-; {:test2.mp_id 2, :test1.id 2}
-; {:test2.mp_id 3, :test1.id 3}
-; {:test2.mp_id 3, :test1.id 3}
-; {:test2.mp_id 100, :test1.id nil}
-; {:test2.mp_id 150, :test1.id nil}
-; {:test2.mp_id nil, :test1.id 4}
-; {:test2.mp_id nil, :test1.id 5}
-; {:test2.mp_id nil, :test1.id 6}
-; {:test2.mp_id nil, :test1.id 7}
-; {:test2.mp_id nil, :test1.id 8}
-; {:test2.mp_id nil, :test1.id 9}
-; {:test2.mp_id nil, :test1.id 10}]
+;[{:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
+; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
+; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2}
+; {:test2.mp_id 100, :test2.1 4, :test1.id nil, :test1.1 nil}
+; {:test2.mp_id 150, :test2.1 5, :test1.id nil, :test1.1 nil}
+; {:test2.mp_id nil, :test2.1 nil, :test1.id 3, :test1.1 3}
+; {:test2.mp_id nil, :test2.1 nil, :test1.id 4, :test1.1 4}]
 (defn full-outer-join
   [column1 column2 table1_raw table2_raw]
   (let [left_outer_join (vec (left-join column1 column2 table1_raw table2_raw))
@@ -397,16 +385,14 @@
 ; EXAMPLE OF WORK:
 ;(inner-join test_column1 test_column2 test1 test2)
 ;=>
-;({:test1.id 1, :test2.mp_id 1}
-; {:test1.id 2, :test2.mp_id 2}
-; {:test1.id 3, :test2.mp_id 3}
-; {:test1.id 3, :test2.mp_id 3})
+;({:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3})
 ;(inner-join test_column2 test_column1 test2 test1)
 ;=>
-;({:test2.mp_id 1, :test1.id 1}
-; {:test2.mp_id 2, :test1.id 2}
-; {:test2.mp_id 3, :test1.id 3}
-; {:test2.mp_id 3, :test1.id 3})
+;({:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
+; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
+; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2})
 (defn inner-join
   [column1 column2 table1 table2]
   (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
