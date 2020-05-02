@@ -230,7 +230,11 @@
         file (if usedJoin
                data
                (choose_file file_name))
-        column (get column_raw :column)]
+        column (if usedJoin
+                 (str (get column_raw :file)
+                      "."
+                      (get column_raw :column))
+                 (get column_raw :column))]
     (case (get column_raw :function)
       "count" (Count file column)
       "sum" (Sum file column)
@@ -242,7 +246,11 @@
   (apply merge (for [column columns]
                  (assoc {} (keyword (str (get column :function)
                                          "("
-                                         (get column :column)
+                                         (if usedJoin
+                                           (str (get column :file)
+                                                "."
+                                                (get column :column))
+                                           (get column :column))
                                          ")")) (callFunction column usedJoin data)))))
 
 ; ========================================
@@ -442,18 +450,19 @@
 (defn select
   [query commands joinClause]
   ;(println "================SELECT===============")
-  (let [field1 (if (nil? joinClause)
-                 nil
-                 (get joinClause :field1))
-        field2 (if (nil? joinClause)
-                 nil
-                 (get joinClause :field2))
-        file1 (if (nil? joinClause)
-                 nil
-                 (get joinClause :file1))
-        file2 (if (nil? joinClause)
-                 nil
-                 (get joinClause :file2))
+  (let [usedJoin (not (nil? joinClause))
+        field1 (if usedJoin
+                 (get joinClause :field1)
+                 nil)
+        field2 (if usedJoin
+                 (get joinClause :field2)
+                 nil)
+        file1 (if usedJoin
+                 (get joinClause :file1)
+                 nil)
+        file2 (if usedJoin
+                 (get joinClause :file2)
+                 nil)
         data (cond
                ; first condition
                (not= -1 (.indexOf commands "inner join"))
@@ -472,16 +481,18 @@
         columns (get query :columns)
         columns_usual_vector (vec (remove nil? (for [column columns]
                                                  (if (nil? (get column :function))
-                                                   (keyword (get column :column))
+                                                   (if usedJoin
+                                                     (keyword (str (get column :file)
+                                                                   "."
+                                                                   (get column :column)))
+                                                     (keyword (get column :column)))
                                                    nil))))
         columns_functions_vector (vec (remove nil? (for [column columns]
                                                      (if (some? (get column :function))
                                                        column
                                                        nil))))
         select_functions (callFunctions columns_functions_vector
-                                        (if (nil? joinClause)
-                                          false
-                                          true)
+                                        usedJoin
                                         data)
         select_usual (for [line data]
                        (select-keys line columns_usual_vector))]
@@ -1034,28 +1045,16 @@
 ; select mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mp_id;
-; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
+; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by map_zal.skl9.id_mp desc;
 ; select mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.fullname = mp-posts_full.full_name;
 ; select distinct mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.fullname = mp-posts_full.full_name;
 ; select mps-declarations_rada.* from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select mps-declarations_rada.*, mp-posts_full.* from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 
 ; on ~, full outer join, functions + full outer join
-; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 full outer join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by id_mp desc;
+; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 full outer join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by map_zal-skl9.id_mp desc, mp-posts_full.mp_id desc;
 ; select mps-declarations_rada.mp_id from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mp_id;
-
-(def columns_test
-  ["mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id"])
-
-(def file_test
-  "mp-posts_full")
-
-(def commands_test
-  ["select" "from" "inner join" "on"])
-
-(def input_test
-  ["select" "mp-posts_full.mp_id" "mp-posts_full.full_name" "mps-declarations_rada.mp_id" "from" "mp-posts_full" "inner" "join" "mps-declarations_rada" "on" "mp_id"])
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
