@@ -2,8 +2,7 @@
   (:gen-class)
   (:use [clojure.string]
         [clojure.data.csv]
-        [clojure.data.json])
-  (:import (clojure.lang SeqEnumeration)))
+        [clojure.data.json]))
 
 (require '[clojure.data.csv :as csv]
          '[clojure.java.io :as io]
@@ -465,15 +464,15 @@
                  nil)
         data (cond
                ; first condition
-               (not= -1 (.indexOf commands "inner join"))
+               (some #(= "inner join" %) commands)
                ; first action
                (inner-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; second condition
-               (not= -1 (.indexOf commands "full outer join"))
+               (some #(= "full outer join" %) commands)
                ; second action
                (full-outer-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; third condition
-               (not= -1 (.indexOf commands "left join"))
+               (some #(= "left join" %) commands)
                ; third action
                (left-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; else
@@ -586,14 +585,14 @@
   ;(println "=====CHECKWHERE=====")
   ;(print "selected_data: ")
   ;(println selected_data)
-  (if (not= -1 (.indexOf commands "where"))
+  (if (some #(= "where" %) commands)
     (where selected_data clause)
     selected_data))
 
 (defn checkSelect
   [query commands joinClause]
   ;(println "==================CHECKSELECT==================")
-  (if (not= -1 (.indexOf commands "distinct"))
+  (if (some #(= "distinct" %) commands)
     (select_distinct query commands joinClause)
     (select query commands joinClause)))
 
@@ -688,14 +687,7 @@
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone columns_raw]
-  (let [columns (vec (for [element columns_raw]
-                       (if (nil? (get element :function))
-                         (get element :column)
-                         (str (get element :function)
-                              "("
-                              (get element :column)
-                              ")"))))
-        clause (if (not= -1 (.indexOf clause_undone "not"))
+  (let [clause (if (some #(= "not" %) clause_undone)
                  (clojure.string/join " " (subvec clause_undone 1))
                  (clojure.string/join " " (subvec clause_undone 0)))
         oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="}
@@ -703,7 +695,7 @@
         operation (first (remove nil? (for [element (keys operationsTranslations)]
                                         (if-not (nil? (clojure.string/index-of clause element)) element))))
         column (subs clause 0 (clojure.string/index-of clause operation))
-        finalOperation (get operationsTranslations (if (not= -1 (.indexOf clause_undone "not"))
+        finalOperation (get operationsTranslations (if (some #(= "not" %) clause_undone)
                                                      (get oppositeOperations operation)
                                                      operation))
         bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation))))]
@@ -717,9 +709,9 @@
 (defn getClause
   [clause_undone columns]
   (let [clauseWord (cond
-                     (not= -1 (.indexOf clause_undone "and"))
+                     (some #(= "and" %) clause_undone)
                      "and"
-                     (not= -1 (.indexOf clause_undone "or"))
+                     (some #(= "or" %) clause_undone)
                      "or"
                      :else nil)]
     (cond
@@ -826,7 +818,7 @@
   [query_raw commands file]
   ;(println "==================GETCOLUMNS==================")
   (let [columns (subvec query_raw
-                      (if (not= -1 (.indexOf commands "distinct"))
+                      (if (some #(= "distinct" %) commands)
                         2
                         1)
                       (.indexOf query_raw "from"))]
@@ -880,7 +872,7 @@
   [query word]
   ;(println "================CHECKBYFUNCTION=================")
   (let [mainWord (first (split word #" "))]
-   (if (not= -1 (.indexOf query mainWord))
+   (if (some #(= mainWord %) query)
     (let [raw (assoc query (.indexOf query mainWord) word)]
       (apply conj (subvec raw 0 (.indexOf raw "by")) (subvec raw (+ 1 (.indexOf raw "by")))))
     query)))
@@ -889,7 +881,7 @@
 ; which are present in the query
 (defn getCommands
   [query commands_list]
-  (filterv (fn [x] (if (not= -1 (.indexOf commands_list (clojure.string/lower-case x)))
+  (filterv (fn [x] (if (some #(= (clojure.string/lower-case x) %) commands_list)
                      true
                      false))
            query))
@@ -940,10 +932,10 @@
         columns (getColumns query_raw commands file)
         query {:file file
                :columns columns}
-        clause (if (not= -1 (.indexOf commands "where"))
+        clause (if (some #(= "where" %) commands)
                  (cond
                    ; first condition
-                   (and (= -1 (.indexOf commands "order by"))
+                   (and (not (some #(= "order by" %) commands))
                         true
                         ; other conditions like 'group by' and so on
                         )
@@ -952,7 +944,7 @@
                      (subvec query_raw (+ 1 (.indexOf query_raw "where")))
                      columns)
                    ; second condition
-                   (and (not= -1 (.indexOf commands "order by"))
+                   (and (some #(= "order by" %) commands)
                         true
                         ; other conditions
                         )
@@ -965,20 +957,20 @@
                    )
                  nil)
         orderClause (cond
-                      (not= -1 (.indexOf commands "order by"))
+                      (some #(= "order by" %) commands)
                       (getOrderClause (subvec query_raw (+ 1 (.indexOf query_raw "order by"))))
                       :else nil)
-        joinClause (if (or (not= -1 (.indexOf commands "inner join"))
-                           (not= -1 (.indexOf commands "full outer join"))
-                           (not= -1 (.indexOf commands "left join")))
+        joinClause (if (or (some #(= "inner join" %) commands)
+                           (some #(= "full outer join" %) commands)
+                           (some #(= "left join" %) commands))
                      (cond
                        ; first condition
-                       (not= -1 (.indexOf commands "where"))
+                       (some #(= "where" %) commands)
                        ;first action
                        (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "where")))
                        ; second condition
-                       (and (= -1 (.indexOf commands "where"))
-                            (not= -1 (.indexOf commands "order by")))
+                       (and (not (some #(= "where" %) commands))
+                            (some #(= "order by" %) commands))
                        ; second action
                        (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "order by")))
                        ; third condition and action
