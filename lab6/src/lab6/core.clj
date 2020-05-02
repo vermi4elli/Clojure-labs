@@ -248,6 +248,16 @@
 ; ========================================
 ; Implementation for JOIN queries
 
+; changes the names of columns in the table_name from column_name to table_name.column_name
+(defn modifyColumnNames
+  [table table_name]
+  (vec (for [element table]
+         (apply merge (for [col_name (keys element)]
+                        (assoc {} (keyword (str table_name
+                                                "."
+                                                (name col_name)))
+                                  (get element col_name)))))))
+
 ; EXAMPLE OF WORK
 ; (left-join "id" "mp_id" test3 test4)
 (defn left-join
@@ -314,37 +324,15 @@
                                                 nil)))))]
     (apply conj left_outer_join right_anti_join)))
 
-(def test0
-  [{:id 22
-    :surname "adw"}
-   {:id 22
-    :surname "adw"}
-   {:id 11
-    :surname "adw"}
-   {:id 3
-    :surname "adw"}
-   {:id 2
-    :surname "adw"}])
+(def test_column1
+  {:field "id"
+   :file "test1"})
+
+(def test_column2
+  {:field "mp_id"
+   :file "test2"})
 
 (def test1
-  [{:mp_id 2
-    :name "kek"}
-   {:mp_id 2
-    :name "lol"}
-   {:mp_id 1
-    :name "lol"}
-   {:mp_id 3
-    :name "rofl"}
-   {:mp_id 47
-    :name "oi"}])
-
-(def test2
-  [{:id 22
-    :surname "adw"}
-   {:id 22
-    :surname "adw"}])
-
-(def test3
   [
    {:id 1}
    {:id 2}
@@ -358,7 +346,7 @@
    {:id 10}
    ])
 
-(def test4
+(def test2
   [
    {:mp_id 1}
    {:mp_id 2}
@@ -369,39 +357,42 @@
    ])
 
 ; EXAMPLE OF WORK:
-;(inner-join "id" "mp_id" test0 test1)
+;(inner-join test_column1 test_column2 test1 test2)
 ;=>
-;({:id 3, :surname "adw", :mp_id 3, :name "rofl"}
-; {:id 2, :surname "adw", :mp_id 2, :name "kek"}
-; {:id 2, :surname "adw", :mp_id 2, :name "lol"})
-;
-;(inner-join "mp_id" "id" test1 test0)
+;({:test1.id 1, :test2.mp_id 1}
+; {:test1.id 2, :test2.mp_id 2}
+; {:test1.id 3, :test2.mp_id 3}
+; {:test1.id 3, :test2.mp_id 3})
+;(inner-join test_column2 test_column1 test2 test1)
 ;=>
-;({:mp_id 2, :name "kek", :id 2, :surname "adw"}
-; {:mp_id 2, :name "lol", :id 2, :surname "adw"}
-; {:mp_id 3, :name "rofl", :id 3, :surname "adw"})
+;({:test2.mp_id 1, :test1.id 1}
+; {:test2.mp_id 2, :test1.id 2}
+; {:test2.mp_id 3, :test1.id 3}
+; {:test2.mp_id 3, :test1.id 3})
 (defn inner-join
-  [field1 field2 table1 table2]
-  (remove nil? (flatten (let [table table1
-                              other_table table2
-                              table_count (count table)]
+  [column1 column2 table1 table2]
+  (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
+                              other_table (modifyColumnNames table2 (get column2 :file))
+                              table_count (count table)
+                              field1 (keyword (str (get column1 :file) "." (get column1 :field)))
+                              field2 (keyword (str (get column2 :file) "." (get column2 :field)))]
                           (for [i (range 0 table_count)]
                             (let [elem1 (nth table i)
                                   elem2 (remove nil? (loop [index 0
-                                                                limit (count other_table)
-                                                                elements []]
-                                                           (if (< index limit)
-                                                             (recur
-                                                               (+' 1 index)
-                                                               limit
-                                                               (if (= (get elem1 (keyword field1))
-                                                                      (get (nth other_table index) (keyword field2)))
-                                                                 (conj elements (nth other_table index))
-                                                                 elements))
-                                                             elements)))]
+                                                            limit (count other_table)
+                                                            elements []]
+                                                       (if (< index limit)
+                                                         (recur
+                                                           (+' 1 index)
+                                                           limit
+                                                           (if (= (get elem1 field1)
+                                                                  (get (nth other_table index) field2))
+                                                             (conj elements (nth other_table index))
+                                                             elements))
+                                                         elements)))]
                               (if (not= 0 (count elem2))
                                 (for [el elem2]
-                                  (merge (nth table i) el))
+                                  (merge elem1 el))
                                 nil)))))))
 
 ; ========================================
@@ -426,15 +417,15 @@
                ; first condition
                (not= -1 (.indexOf commands "inner join"))
                ; first action
-               (inner-join field1 field2 (choose_file file1) (choose_file file2))
+               (inner-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; second condition
                (not= -1 (.indexOf commands "full outer join"))
                ; second action
-               (full-outer-join field1 field2 (choose_file file1) (choose_file file2))
+               (full-outer-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; third condition
                (not= -1 (.indexOf commands "left join"))
                ; third action
-               (left-join field1 field2 (choose_file file1) (choose_file file2))
+               (left-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; else
                :else (choose_file (get query :file)))
         columns (get query :columns)
@@ -958,7 +949,6 @@
      :orderClause orderClause
      :joinClause joinClause}))
 ; yet to add the JOIN query
-
 
 (defn -main [& args]
   (println "Write your commands here!")
