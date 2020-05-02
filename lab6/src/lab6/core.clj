@@ -265,28 +265,46 @@
                                                 (name col_name)))
                                   (get element col_name)))))))
 
+(def test_column1
+  {:field "id"
+   :file "test1"})
+
+(def test_column2
+  {:field "mp_id"
+   :file "test2"})
+
+(def test1
+  [
+   {:id 1 :1 1}
+   {:id 2 :1 2}
+   {:id 3 :1 3}
+   {:id 4 :1 4}
+   ])
+
+(def test2
+  [
+   {:mp_id 1 :1 1}
+   {:mp_id 2 :1 2}
+   {:mp_id 2 :1 3}
+   {:mp_id 100 :1 4}
+   {:mp_id 150 :1 5}
+   ])
+
 ; EXAMPLE OF WORK
 ;(left-join test_column1 test_column2 test1 test2)
 ;=>
-;({:test1.id 1, :test2.mp_id 1}
-; {:test1.id 2, :test2.mp_id 2}
-; {:test1.id 3, :test2.mp_id 3}
-; {:test1.id 3, :test2.mp_id 3}
-; {:test1.id 4, :test2.mp_id nil}
-; {:test1.id 5, :test2.mp_id nil}
-; {:test1.id 6, :test2.mp_id nil}
-; {:test1.id 7, :test2.mp_id nil}
-; {:test1.id 8, :test2.mp_id nil}
-; {:test1.id 9, :test2.mp_id nil}
-; {:test1.id 10, :test2.mp_id nil})
+;({:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
+; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3}
+; {:test1.id 3, :test1.1 3, :test2.mp_id nil, :test2.1 nil}
+; {:test1.id 4, :test1.1 4, :test2.mp_id nil, :test2.1 nil})
 ;(left-join test_column2 test_column1 test2 test1)
 ;=>
-;({:test2.mp_id 1, :test1.id 1}
-; {:test2.mp_id 2, :test1.id 2}
-; {:test2.mp_id 3, :test1.id 3}
-; {:test2.mp_id 3, :test1.id 3}
-; {:test2.mp_id 100, :test1.id nil}
-; {:test2.mp_id 150, :test1.id nil})
+;({:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
+; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
+; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2}
+; {:test2.mp_id 100, :test2.1 4, :test1.id nil, :test1.1 nil}
+; {:test2.mp_id 150, :test2.1 5, :test1.id nil, :test1.1 nil})
 (defn left-join
   [column1 column2 table1 table2]
   (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
@@ -310,8 +328,8 @@
                                                              elements)))
                                   elem2 (if (some some? elem2_raw)
                                           elem2_raw
-                                          (apply merge (for [word (keys (first other_table))]
-                                                         (assoc {} word nil))))]
+                                          (vector (apply merge (flatten (for [word (keys (first other_table))]
+                                                                          (assoc {} word nil))))))]
                               (if (not= 0 (count elem2))
                                 (for [el elem2]
                                   (merge (nth table i) el))
@@ -357,52 +375,24 @@
         field2 (keyword (str (get column2 :file) "." (get column2 :field)))
         table1_empty_cell (apply merge (for [word (keys (first table1))]
                                          (assoc {} word nil)))
-        right_anti_join (vec (remove nil? (for [elem1 table2]
-                                            (let [elem1_value (get elem1 (keyword field2))
-                                                  elem2 (if (some some?
+        right_anti_join (vec (remove nil? (for [elem2 table2]
+                                            (let [elem2_value (get elem2 field2)
+                                                  elem1 (if (some some?
                                                                   (for [el table1]
-                                                                    (if (= (get el (keyword field1))
-                                                                           elem1_value)
+                                                                    (if (= (get el field1)
+                                                                           elem2_value)
                                                                       1
                                                                       nil)))
                                                           nil
                                                           table1_empty_cell)]
-                                              (if (some? elem2)
-                                                (merge elem2 elem1)
+                                              (if (some? elem1)
+                                                (merge elem1 elem2)
                                                 nil)))))]
+    (print "left_join: ")
+    (println left_outer_join)
+    (print "right_join: ")
+    (println right_anti_join)
     (apply conj left_outer_join right_anti_join)))
-
-(def test_column1
-  {:field "id"
-   :file "test1"})
-
-(def test_column2
-  {:field "mp_id"
-   :file "test2"})
-
-(def test1
-  [
-   {:id 1}
-   {:id 2}
-   {:id 3}
-   {:id 4}
-   {:id 5}
-   {:id 6}
-   {:id 7}
-   {:id 8}
-   {:id 9}
-   {:id 10}
-   ])
-
-(def test2
-  [
-   {:mp_id 1}
-   {:mp_id 2}
-   {:mp_id 3}
-   {:mp_id 3}
-   {:mp_id 100}
-   {:mp_id 150}
-   ])
 
 ; EXAMPLE OF WORK:
 ;(inner-join test_column1 test_column2 test1 test2)
@@ -495,6 +485,12 @@
                                         data)
         select_usual (for [line data]
                        (select-keys line columns_usual_vector))]
+    (print "data: ")
+    (println data)
+    (print "columns usual: ")
+    (println columns_usual_vector)
+    (print "columns functions: ")
+    (println columns_functions_vector)
     (cond
       (empty? select_functions) select_usual
       (empty? select_usual) (vector select_functions)
