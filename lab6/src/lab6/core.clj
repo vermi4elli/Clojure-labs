@@ -382,28 +382,23 @@
 ; {:mp_id 3, :name "rofl", :id 3, :surname "adw"})
 (defn inner-join
   [field1 field2 table1 table2]
-  (remove nil? (flatten (let [table (if (<= (count table1) (count table2))
-                                      table1
-                                      table2)
-                              other_table (if (<= (count table1) (count table2))
-                                            table2
-                                            table1)
+  (remove nil? (flatten (let [table table1
+                              other_table table2
                               table_count (count table)]
                           (for [i (range 0 table_count)]
                             (let [elem1 (nth table i)
-                                  elem2 (remove nil?
-                                                (loop [index 0
-                                                       limit (count other_table)
-                                                       elements []]
-                                                  (if (< index limit)
-                                                    (recur
-                                                      (+' 1 index)
-                                                      limit
-                                                      (if (= (get elem1 (keyword field1))
-                                                             (get (nth other_table index) (keyword field2)))
-                                                        (conj elements (nth other_table index))
-                                                        elements))
-                                                    elements)))]
+                                  elem2 (remove nil? (loop [index 0
+                                                                limit (count other_table)
+                                                                elements []]
+                                                           (if (< index limit)
+                                                             (recur
+                                                               (+' 1 index)
+                                                               limit
+                                                               (if (= (get elem1 (keyword field1))
+                                                                      (get (nth other_table index) (keyword field2)))
+                                                                 (conj elements (nth other_table index))
+                                                                 elements))
+                                                             elements)))]
                               (if (not= 0 (count elem2))
                                 (for [el elem2]
                                   (merge (nth table i) el))
