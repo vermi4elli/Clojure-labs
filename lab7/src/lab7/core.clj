@@ -224,7 +224,10 @@
   )
 
 (defn callFunction
-  [column_raw usedJoin data]
+  [column_raw usedJoin usedGroup data]
+  (println "=====CALLFUNCTION=====")
+  (print "column_raw: ")
+  (println column_raw)
   (let [file_name (get column_raw :file)
         file (if usedJoin
                data
@@ -240,17 +243,43 @@
       "min" (Min file column)
       )))
 
+; select Count(mp_id), full_name from mp-posts_full group by full_name;
+
 (defn callFunctions
-  [columns usedJoin data]
-  (apply merge (for [column columns]
-                 (assoc {} (keyword (str (get column :function)
-                                         "("
-                                         (if usedJoin
-                                           (str (get column :file)
-                                                "."
-                                                (get column :column))
-                                           (get column :column))
-                                         ")")) (callFunction column usedJoin data)))))
+  [columns usedJoin usedGroup groupClause data]
+  (println "=====CALLFUNCTIONS=====")
+  (print "columns: ")
+  (println columns)
+  (print "usedJoin: ")
+  (println usedJoin)
+  (print "usedGroup: ")
+  (println usedGroup)
+  (print "groupClause: ")
+  (println groupClause)
+  (print "data: ")
+  (println data)
+  (if usedGroup
+    (let [groupColumn (get groupClause :column)
+          groupFile (get groupClause :file)
+          groupedData (group-by (keyword groupColumn) data)
+          functionResultsRaw (for [column columns]
+                               (for [elem groupedData]
+                                 (callFunction column usedJoin usedGroup elem)))]
+      (print "groupedData: ")
+      (println groupedData)
+      (print "functionResultsRaw: ")
+      (println functionResultsRaw)
+      groupedData)
+    (apply merge (for [column columns]
+                   (assoc {} (keyword (str (get column :function)
+                                           "("
+                                           (if usedJoin
+                                             (str (get column :file)
+                                                  "."
+                                                  (get column :column))
+                                             (get column :column))
+                                           ")"))
+                             (callFunction column usedJoin usedGroup data))))))
 
 ; ========================================
 ; Implementation for JOIN queries
@@ -419,9 +448,10 @@
 ; Implementation for SELECT query
 
 (defn select
-  [query commands joinClause]
+  [query commands joinClause groupClause]
   ;(println "================SELECT===============")
   (let [usedJoin (not (nil? joinClause))
+        usedGroup (some? groupClause)
         field1 (if usedJoin
                  (get joinClause :field1)
                  nil)
@@ -462,11 +492,13 @@
                                                      (if (some? (get column :function))
                                                        column
                                                        nil))))
+        select_usual (for [line data]
+                       (select-keys line columns_usual_vector))
         select_functions (callFunctions columns_functions_vector
                                         usedJoin
-                                        data)
-        select_usual (for [line data]
-                       (select-keys line columns_usual_vector))]
+                                        usedGroup
+                                        groupClause
+                                        data)]
     (cond
       (empty? select_functions) select_usual
       (empty? select_usual) (vector select_functions)
@@ -479,8 +511,8 @@
 ; Implementation for SELECT DISTINCT query
 
 (defn select_distinct
-  [query commands joinClause]
-  (vec (set (select query commands joinClause))))
+  [query commands joinClause groupClause]
+  (vec (set (select query commands joinClause groupClause))))
 
 ; ========================================
 ; Implementation for WHERE query
@@ -562,11 +594,11 @@
     selected_data))
 
 (defn checkSelect
-  [query commands joinClause]
+  [query commands joinClause groupClause]
   ;(println "==================CHECKSELECT==================")
   (if (some #(= "distinct" %) commands)
-    (select_distinct query commands joinClause)
-    (select query commands joinClause)))
+    (select_distinct query commands joinClause groupClause)
+    (select query commands joinClause groupClause)))
 
 (defn printResult
   [query]
@@ -582,8 +614,31 @@
         query (get parsed_query :query)
         clause (get parsed_query :clause)
         orderClause (get parsed_query :orderClause)
-        joinClause (get parsed_query :joinClause)]
-    (printResult (orderBy (checkWhere (checkSelect query commands joinClause) commands clause) orderClause))))
+        joinClause (get parsed_query :joinClause)
+        groupClause (get parsed_query :groupClause)]
+    (printResult (orderBy (checkWhere (checkSelect query commands joinClause groupClause) commands clause) orderClause))))
+
+(defn getGroupClause
+  [query_raw]
+  (println "=====GETGROUPCLAUSE=====")
+  (let [column (first query_raw)]
+    (let [indexLeft (index-of column "(")
+          indexStar (index-of column "*")
+          indexDot (index-of column ".")
+          group_column (if (some? indexDot)
+                         (subs column (+ 1 indexDot))
+                         column)
+          file_temp (if (some? indexDot)
+                      (subs column 0 indexDot)
+                      nil)
+          function (if (or (some? indexLeft)
+                           (some? indexStar))
+                     (throw (Exception. ("Agregate functions are not allowed in the GROUP BY query!")))
+                     nil)
+          result {:column group_column
+                  :file file_temp}]
+      result
+      )))
 
 ; parses the join clause to the format:
 ; (e.g. from "inner join table2 on table1.column1 = table2.column2"
@@ -948,7 +1003,17 @@
                        ; third condition and action
                        :else (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from"))))
                        )
-                     nil)]
+                     nil)
+        groupClause (if (some #(= "group by" %) commands)
+                      (cond
+                        ; first condition
+                        (some #(= "order by" %) commands)
+                        ; first action
+                        (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by")) (.indexOf query_raw "orderBy")))
+                        ; second condition and action
+                        :else (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by"))))
+                        )
+                      nil)]
     (print "commands: ")
     (println commands)
     (print "query: ")
@@ -959,11 +1024,14 @@
     (println orderClause)
     (print "joinClause: ")
     (println joinClause)
+    (print "groupClause: ")
+    (println groupClause)
     {:commands commands
      :query query
      :clause clause
      :orderClause orderClause
-     :joinClause joinClause}))
+     :joinClause joinClause
+     :groupClause groupClause}))
 ; yet to add the JOIN query
 
 (defn -main [& args]
