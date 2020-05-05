@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="dbe23c31-f00b-475c-b279-4128eb6699f7" name="Default Changelist" comment="" />
+    <list default="true" id="fcbdd07c-c50f-40de-900c-0c7ecd7f2514" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,17 +10,26 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectId" id="1bFe3Bsd8SzsA7bLBv1kwXtGdnn" />
+  <component name="ProjectId" id="1ZtM6d6y8FjtcuR3mBIScuz9Aqk" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/lab6" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="reference.settings.project.maven.repository.indices" />
   </component>
+  <component name="ReplState" timestamp="1585653870887">{:repl-history {:ide [], :local [], :remote []}}</component>
   <component name="RunManager">
     <configuration default="true" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
       <setting name="replType" value="NREPL" />
@@ -41,18 +50,31 @@
       <setting name="fixLineNumbers" value="false" />
       <method v="2" />
     </configuration>
+    <configuration name="lab 5 repl" type="ClojureREPL" factoryName="Local" activateToolWindowBeforeRun="false">
+      <module name="lab1" />
+      <setting name="replType" value="NREPL" />
+      <setting name="execution" value="LEININGEN" />
+      <setting name="jvmArgs" value="" />
+      <setting name="parameters" value="" />
+      <setting name="workingDir" value="$PROJECT_DIR$/lab1" />
+      <setting name="profiles" value="" />
+      <setting name="aliases" value="" />
+      <setting name="fixLineNumbers" value="false" />
+      <method v="2" />
+    </configuration>
   </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="dbe23c31-f00b-475c-b279-4128eb6699f7" name="Default Changelist" comment="" />
-      <created>1588232068113</created>
+      <changelist id="fcbdd07c-c50f-40de-900c-0c7ecd7f2514" name="Default Changelist" comment="" />
+      <created>1585653762858</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1588232068113</updated>
-      <workItem from="1588232072246" duration="35000" />
+      <updated>1585653762858</updated>
+      <workItem from="1585653766108" duration="105000" />
+      <workItem from="1588596521780" duration="1530000" />
     </task>
     <servers />
   </component>
@@ -60,13 +82,21 @@
     <option name="version" value="2" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="684" y="243" width="530" height="641" key="FileChooserDialogImpl" timestamp="1588232102938">
-      <screen x="0" y="34" width="1920" height="1046" />
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1585653810860">
+      <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="684" y="243" width="530" height="641" key="FileChooserDialogImpl/0.34.1920.1046@0.34.1920.1046" timestamp="1588232102938" />
-    <state x="125" y="221" width="1659" height="679" key="new project wizard" timestamp="1588232106161">
-      <screen x="0" y="34" width="1920" height="1046" />
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1585653810860" />
+    <state x="421" y="96" key="FileChooserDialogImpl" timestamp="1588599914030">
+      <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="125" y="221" width="1659" height="679" key="new project wizard/0.34.1920.1046@0.34.1920.1046" timestamp="1588232106161" />
+    <state x="421" y="96" key="FileChooserDialogImpl/0.0.1280.680@0.0.1280.680" timestamp="1588599914030" />
+    <state x="86" y="0" key="SettingsEditor" timestamp="1588599686425">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="86" y="0" key="SettingsEditor/0.0.1280.680@0.0.1280.680" timestamp="1588599686425" />
+    <state x="91" y="65" key="new project wizard" timestamp="1585653867437">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="91" y="65" key="new project wizard/0.0.1280.680@0.0.1280.680" timestamp="1585653867437" />
   </component>
 </project>
