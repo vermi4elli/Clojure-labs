@@ -225,11 +225,18 @@
 
 (defn callFunction
   [column_raw usedJoin usedGroup data]
-  (println "=====CALLFUNCTION=====")
-  (print "column_raw: ")
-  (println column_raw)
+  ;(println "=====CALLFUNCTION=====")
+  ;(print "column_raw: ")
+  ;(println column_raw)
+  ;(print "usedJoin: ")
+  ;(println usedJoin)
+  ;(print "usedGroup: ")
+  ;(println usedGroup)
+  ;(print "data: ")
+  ;(println data)
   (let [file_name (get column_raw :file)
-        file (if usedJoin
+        file (if (or usedJoin
+                     usedGroup)
                data
                (choose_file file_name))
         column (if usedJoin
@@ -244,32 +251,45 @@
       )))
 
 ; select Count(mp_id), full_name from mp-posts_full group by full_name;
+; (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace "select Count(mp_id), full_name from mp-posts_full group by full_name" #"[,;]" "")) #" ") commands_list))
+; (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace "select Count(mp_id), Sum(mp_id) full_name from mp-posts_full group by full_name" #"[,;]" "")) #" ") commands_list))
 
 (defn callFunctions
   [columns usedJoin usedGroup groupClause data]
   (println "=====CALLFUNCTIONS=====")
-  (print "columns: ")
-  (println columns)
-  (print "usedJoin: ")
-  (println usedJoin)
-  (print "usedGroup: ")
-  (println usedGroup)
-  (print "groupClause: ")
-  (println groupClause)
-  (print "data: ")
-  (println data)
+  ;(print "columns: ")
+  ;(println columns)
+  ;(print "usedJoin: ")
+  ;(println usedJoin)
+  ;(print "usedGroup: ")
+  ;(println usedGroup)
+  ;(print "groupClause: ")
+  ;(println groupClause)
+  ;(print "data: ")
+  ;(println data)
   (if usedGroup
     (let [groupColumn (get groupClause :column)
-          groupFile (get groupClause :file)
           groupedData (group-by (keyword groupColumn) data)
+          groupedDataKeys (keys groupedData)
           functionResultsRaw (for [column columns]
-                               (for [elem groupedData]
-                                 (callFunction column usedJoin usedGroup elem)))]
-      (print "groupedData: ")
-      (println groupedData)
-      (print "functionResultsRaw: ")
-      (println functionResultsRaw)
-      groupedData)
+                               (apply merge (for [elem groupedDataKeys]
+                                              (assoc {} elem (assoc {} (str (get column :function)
+                                                                                     "("
+                                                                                     (if usedJoin
+                                                                                       (str (get column :file)
+                                                                                            "."
+                                                                                            (get column :column))
+                                                                                       (str (get column :column)))
+                                                                                     ")")
+                                                                       (callFunction column usedJoin usedGroup (get groupedData elem)))))))
+          functionResults (apply merge (for [groupedDataKey groupedDataKeys]
+                                         (assoc {} groupedDataKey (apply merge (for [singleFunctionData functionResultsRaw]
+                                                                                 (get singleFunctionData groupedDataKey))))))]
+      ;(print "functionResultsRaw: ")
+      ;(println functionResultsRaw)
+      ;(print "functionResults: ")
+      ;(println functionResults)
+      functionResults)
     (apply merge (for [column columns]
                    (assoc {} (keyword (str (get column :function)
                                            "("
@@ -492,20 +512,41 @@
                                                      (if (some? (get column :function))
                                                        column
                                                        nil))))
-        select_usual (for [line data]
-                       (select-keys line columns_usual_vector))
+        groupByDataMap (group-by (keyword (get groupClause :column)) data)
+        groupedDataKeys (keys groupByDataMap)
+        select_usual (if usedGroup
+                       (apply merge (for [elem groupedDataKeys]
+                                (assoc {} elem (select-keys (first (get groupByDataMap elem)) columns_usual_vector))))
+                       (for [line data]
+                         (select-keys line columns_usual_vector)))
         select_functions (callFunctions columns_functions_vector
                                         usedJoin
                                         usedGroup
                                         groupClause
                                         data)]
-    (cond
-      (empty? select_functions) select_usual
-      (empty? select_usual) (vector select_functions)
-      :else (let [result (apply merge (first select_usual) (vector select_functions))]
-              (if (= (type result) clojure.lang.PersistentArrayMap)
-                (vector result)
-                result)))))
+    (print "groupedDataKeys: ")
+    (println groupedDataKeys)
+    (print "select_usual: ")
+    (println select_usual)
+    (print "select_functions: ")
+    (println select_functions)
+    (if usedGroup
+      (cond
+        (empty? select_functions) (throw (Exception. ("Invalid syntax for GROUP BY: There are no agregation functions in the SELECT query!")))
+        (empty? select_usual) (for [groupDataKey groupedDataKeys]
+                                (get select_functions groupDataKey))
+        :else (let [resultRaw (for [groupDataKey groupedDataKeys]
+                                (merge
+                                  (get select_functions groupDataKey)
+                                  (get select_usual groupDataKey)))]
+                resultRaw))
+      (cond
+        (empty? select_functions) select_usual
+        (empty? select_usual) (vector select_functions)
+        :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                (if (= (type result) clojure.lang.PersistentArrayMap)
+                  (vector result)
+                  result))))))
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
@@ -617,6 +658,17 @@
         joinClause (get parsed_query :joinClause)
         groupClause (get parsed_query :groupClause)]
     (printResult (orderBy (checkWhere (checkSelect query commands joinClause groupClause) commands clause) orderClause))))
+
+(defn testExecuteQuery
+  [parsed_query]
+  ;(println "==================EXECUTEQUERY==================")
+  (let [commands (get parsed_query :commands)
+        query (get parsed_query :query)
+        clause (get parsed_query :clause)
+        orderClause (get parsed_query :orderClause)
+        joinClause (get parsed_query :joinClause)
+        groupClause (get parsed_query :groupClause)]
+    (checkSelect query commands joinClause groupClause)))
 
 (defn getGroupClause
   [query_raw]
@@ -1040,7 +1092,7 @@
   (flush)
   (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on"])
   (loop [input (read-line)]
-    (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
+    (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main)))
 
 ; COMMANDS
