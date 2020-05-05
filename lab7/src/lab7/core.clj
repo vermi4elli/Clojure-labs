@@ -250,10 +250,6 @@
       "min" (Min file column)
       )))
 
-; select Count(mp_id), full_name from mp-posts_full group by full_name;
-; (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace "select Count(mp_id), full_name from mp-posts_full group by full_name" #"[,;]" "")) #" ") commands_list))
-; (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace "select Count(mp_id), Sum(mp_id) full_name from mp-posts_full group by full_name" #"[,;]" "")) #" ") commands_list))
-
 (defn callFunctions
   [columns usedJoin usedGroup groupClause data]
   (println "=====CALLFUNCTIONS=====")
@@ -273,32 +269,35 @@
           groupedDataKeys (keys groupedData)
           functionResultsRaw (for [column columns]
                                (apply merge (for [elem groupedDataKeys]
-                                              (assoc {} elem (assoc {} (str (get column :function)
-                                                                                     "("
-                                                                                     (if usedJoin
-                                                                                       (str (get column :file)
-                                                                                            "."
-                                                                                            (get column :column))
-                                                                                       (str (get column :column)))
-                                                                                     ")")
+                                              (assoc {} elem (assoc {} (keyword
+                                                                         (str (get column :function)
+                                                                              "<"
+                                                                              (if usedJoin
+                                                                                (str (get column :file)
+                                                                                     "."
+                                                                                     (get column :column))
+                                                                                (get column :column))
+                                                                              ">"))
                                                                        (callFunction column usedJoin usedGroup (get groupedData elem)))))))
-          functionResults (apply merge (for [groupedDataKey groupedDataKeys]
-                                         (assoc {} groupedDataKey (apply merge (for [singleFunctionData functionResultsRaw]
-                                                                                 (get singleFunctionData groupedDataKey))))))]
-      ;(print "functionResultsRaw: ")
-      ;(println functionResultsRaw)
-      ;(print "functionResults: ")
-      ;(println functionResults)
+          functionResults (if (empty? functionResultsRaw)
+                            (throw (Exception. "Invalid syntax for GROUP BY: There are no agregation functions in the SELECT query!"))
+                            (apply merge (for [groupedDataKey groupedDataKeys]
+                                           (assoc {} groupedDataKey (apply merge (for [singleFunctionData functionResultsRaw]
+                                                                                   (get singleFunctionData groupedDataKey)))))))]
+      (print "functionResultsRaw: ")
+      (println functionResultsRaw)
+      (print "functionResults: ")
+      (println functionResults)
       functionResults)
     (apply merge (for [column columns]
                    (assoc {} (keyword (str (get column :function)
-                                           "("
+                                           "<"
                                            (if usedJoin
                                              (str (get column :file)
                                                   "."
                                                   (get column :column))
                                              (get column :column))
-                                           ")"))
+                                           ">"))
                              (callFunction column usedJoin usedGroup data))))))
 
 ; ========================================
@@ -469,9 +468,15 @@
 
 (defn select
   [query commands joinClause groupClause]
-  ;(println "================SELECT===============")
+  (println "================SELECT===============")
+  (print "joinClause: ")
+  (println joinClause)
+  (print "groupClause: ")
+  (println groupClause)
+  (print "commands: ")
+  (println commands)
   (let [usedJoin (not (nil? joinClause))
-        usedGroup (some? groupClause)
+        usedGroup (not (nil? groupClause))
         field1 (if usedJoin
                  (get joinClause :field1)
                  nil)
@@ -512,8 +517,12 @@
                                                      (if (some? (get column :function))
                                                        column
                                                        nil))))
-        groupByDataMap (group-by (keyword (get groupClause :column)) data)
-        groupedDataKeys (keys groupByDataMap)
+        groupByDataMap (if usedGroup
+                         (group-by (keyword (get groupClause :column)) data)
+                         nil)
+        groupedDataKeys (if usedGroup
+                          (keys groupByDataMap)
+                          nil)
         select_usual (if usedGroup
                        (apply merge (for [elem groupedDataKeys]
                                 (assoc {} elem (select-keys (first (get groupByDataMap elem)) columns_usual_vector))))
@@ -524,15 +533,8 @@
                                         usedGroup
                                         groupClause
                                         data)]
-    (print "groupedDataKeys: ")
-    (println groupedDataKeys)
-    (print "select_usual: ")
-    (println select_usual)
-    (print "select_functions: ")
-    (println select_functions)
     (if usedGroup
       (cond
-        (empty? select_functions) (throw (Exception. ("Invalid syntax for GROUP BY: There are no agregation functions in the SELECT query!")))
         (empty? select_usual) (for [groupDataKey groupedDataKeys]
                                 (get select_functions groupDataKey))
         :else (let [resultRaw (for [groupDataKey groupedDataKeys]
@@ -1092,7 +1094,7 @@
   (flush)
   (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on"])
   (loop [input (read-line)]
-    (testExecuteQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
+    (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main)))
 
 ; COMMANDS
@@ -1136,7 +1138,7 @@
 ; select mps-declarations_rada.* from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select mps-declarations_rada.*, mp-posts_full.* from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 
-; on ~, full outer join, functions + full outer join
+; on ~, full outer join, functions + full outer join (change to left join if you want)
 ; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 full outer join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by map_zal-skl9.id_mp desc, mp-posts_full.mp_id desc;
 ; select mps-declarations_rada.mp_id from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
@@ -1144,3 +1146,8 @@
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id where mps-declarations_rada.mp_id=15816;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id where mps-declarations_rada.mp_id=15816 order by mp-posts_full.full_name;
+
+; on ~, group by
+; select Count(mp_id), full_name from mp-posts_full group by full_name;
+; ERROR -> select mp_id, full_name from mp-posts_full group by full_name;
+; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name;
