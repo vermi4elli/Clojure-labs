@@ -467,7 +467,7 @@
 ; Implementation for SELECT query
 
 (defn select
-  [query commands joinClause groupClause]
+  [query commands joinClause groupClause havingClause]
   (println "================SELECT===============")
   (print "joinClause: ")
   (println joinClause)
@@ -477,6 +477,7 @@
   (println commands)
   (let [usedJoin (not (nil? joinClause))
         usedGroup (not (nil? groupClause))
+        usedHaving (not (nil? havingClause))
         field1 (if usedJoin
                  (get joinClause :field1)
                  nil)
@@ -540,8 +541,11 @@
         :else (let [resultRaw (for [groupDataKey groupedDataKeys]
                                 (merge
                                   (get select_functions groupDataKey)
-                                  (get select_usual groupDataKey)))]
-                resultRaw))
+                                  (get select_usual groupDataKey)))
+                    result (if usedHaving
+                             nil
+                             resultRaw)]
+                result))
       (cond
         (empty? select_functions) select_usual
         (empty? select_usual) (vector select_functions)
@@ -554,8 +558,8 @@
 ; Implementation for SELECT DISTINCT query
 
 (defn select_distinct
-  [query commands joinClause groupClause]
-  (vec (set (select query commands joinClause groupClause))))
+  [query commands joinClause groupClause havingClause]
+  (vec (set (select query commands joinClause groupClause havingClause))))
 
 ; ========================================
 ; Implementation for WHERE query
@@ -637,11 +641,11 @@
     selected_data))
 
 (defn checkSelect
-  [query commands joinClause groupClause]
+  [query commands joinClause groupClause havingClause]
   ;(println "==================CHECKSELECT==================")
   (if (some #(= "distinct" %) commands)
-    (select_distinct query commands joinClause groupClause)
-    (select query commands joinClause groupClause)))
+    (select_distinct query commands joinClause groupClause havingClause)
+    (select query commands joinClause groupClause havingClause)))
 
 (defn printResult
   [query]
@@ -658,8 +662,9 @@
         clause (get parsed_query :clause)
         orderClause (get parsed_query :orderClause)
         joinClause (get parsed_query :joinClause)
-        groupClause (get parsed_query :groupClause)]
-    (printResult (orderBy (checkWhere (checkSelect query commands joinClause groupClause) commands clause) orderClause))))
+        groupClause (get parsed_query :groupClause)
+        havingClause (get parsed_query :havingClause)]
+    (printResult (orderBy (checkWhere (checkSelect query commands joinClause groupClause havingClause) commands clause) orderClause))))
 
 (defn testExecuteQuery
   [parsed_query]
@@ -809,7 +814,8 @@
   (println "=====GETHAVINGCLAUSE=====")
   (let [isComplex? (or (some #(= "and" %) query_raw)
                        (some #(= "or" %) query_raw))
-        parsedQuery (getClause query_raw)]
+        {:clausr} (getClause query_raw)
+        ]
     parsedQuery))
 
 ; mp_id name asc
@@ -1107,7 +1113,8 @@
      :clause clause
      :orderClause orderClause
      :joinClause joinClause
-     :groupClause groupClause}))
+     :groupClause groupClause
+     :havingClause havingClause}))
 ; yet to add the JOIN query
 
 (defn -main [& args]
