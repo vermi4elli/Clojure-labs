@@ -674,7 +674,7 @@
 
 (defn getGroupClause
   [query_raw]
-  (println "=====GETGROUPCLAUSE=====")
+  ;(println "=====GETGROUPCLAUSE=====")
   (let [column (first query_raw)]
     (let [indexLeft (index-of column "(")
           indexStar (index-of column "*")
@@ -767,7 +767,7 @@
 ;;                                                             :operation "<="
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
-  [clause_undone columns_raw]
+  [clause_undone]
   (let [clause (if (some #(= "not" %) clause_undone)
                  (clojure.string/join " " (subvec clause_undone 1))
                  (clojure.string/join " " (subvec clause_undone 0)))
@@ -788,7 +788,7 @@
 
 ; parses the clause
 (defn getClause
-  [clause_undone columns]
+  [clause_undone]
   (let [clauseWord (cond
                      (some #(= "and" %) clause_undone)
                      "and"
@@ -796,12 +796,21 @@
                      "or"
                      :else nil)]
     (cond
-      (nil? clauseWord) {:clauseWord nil :clause (vector (getSimpleClause clause_undone columns))}
+      (nil? clauseWord) {:clauseWord nil :clause (vector (getSimpleClause clause_undone))}
       (= "and" clauseWord) {:clauseWord "and" :clause (for [element (parseComplexClause clause_undone clauseWord)]
-                                                        (getSimpleClause element columns))}
+                                                        (getSimpleClause element))}
       (= "or" clauseWord) {:clauseWord "or" :clause (for [element (parseComplexClause clause_undone clauseWord)]
-                                                      (getSimpleClause element columns))}
+                                                      (getSimpleClause element))}
       )))
+
+; (getHavingClause ["mp_id>=21000" "and" "mp_id<=21200"])
+(defn getHavingClause
+  [query_raw]
+  (println "=====GETHAVINGCLAUSE=====")
+  (let [isComplex? (or (some #(= "and" %) query_raw)
+                       (some #(= "or" %) query_raw))
+        parsedQuery (getClause query_raw)]
+    parsedQuery))
 
 ; mp_id name asc
 ; mp_id asc name desc
@@ -1017,18 +1026,14 @@
                  (cond
                    ; first condition
                    (and (not (some #(= "order by" %) commands))
-                        true
-                        ; other conditions like 'group by' and so on
-                        )
+                        (not (some #(= "group by" %) commands)))
                    ; first action
                    (getClause
                      (subvec query_raw (+ 1 (.indexOf query_raw "where")))
                      columns)
                    ; second condition
                    (and (some #(= "order by" %) commands)
-                        true
-                        ; other conditions
-                        )
+                        (not (some #(= "group by" %) commands)))
                    ; second action
                    (getClause
                      (subvec query_raw (+ 1 (.indexOf query_raw "where")) (.indexOf query_raw "order by"))
@@ -1047,12 +1052,15 @@
                      (cond
                        ; first condition
                        (some #(= "where" %) commands)
-                       ;first action
                        (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "where")))
                        ; second condition
                        (and (not (some #(= "where" %) commands))
+                            (some #(= "group by" %) commands))
+                       (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "group by")))
+                       ; third condition
+                       (and (not (some #(= "where" %) commands))
+                            (not (some #(= "group by" %) commands))
                             (some #(= "order by" %) commands))
-                       ; second action
                        (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from")) (.indexOf query_raw "order by")))
                        ; third condition and action
                        :else (getJoinClause (subvec query_raw (+ 2 (.indexOf query_raw "from"))))
@@ -1061,13 +1069,25 @@
         groupClause (if (some #(= "group by" %) commands)
                       (cond
                         ; first condition
-                        (some #(= "order by" %) commands)
-                        ; first action
-                        (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by")) (.indexOf query_raw "orderBy")))
-                        ; second condition and action
+                        (some #(= "having" %) commands)
+                        (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by")) (.indexOf query_raw "having")))
+                        ; second condition
+                        (and (some #(= "order by" %) commands)
+                             (not (some #(= "having" %) commands)))
+                        (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by")) (.indexOf query_raw "order by")))
+                        ; third condition
                         :else (getGroupClause (subvec query_raw (+ 1 (.indexOf query_raw "group by"))))
                         )
-                      nil)]
+                      nil)
+        havingClause (if (some? groupClause)
+                       (cond
+                         ; first condition
+                         (some #(= "order by" %) commands)
+                         (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having")) (.indexOf query_raw "order by")))
+                         ; second condition
+                         :else (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having"))))
+                         )
+                       nil)]
     (print "commands: ")
     (println commands)
     (print "query: ")
@@ -1080,6 +1100,8 @@
     (println joinClause)
     (print "groupClause: ")
     (println groupClause)
+    (print "havingClause: ")
+    (println havingClause)
     {:commands commands
      :query query
      :clause clause
@@ -1092,7 +1114,7 @@
   (println "Write your commands here!")
   (print "~> ")
   (flush)
-  (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on"])
+  (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on" "having"])
   (loop [input (read-line)]
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main)))
@@ -1151,3 +1173,4 @@
 ; select Count(mp_id), full_name from mp-posts_full group by full_name;
 ; ERROR -> select mp_id, full_name from mp-posts_full group by full_name;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name;
+; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by full_name;
