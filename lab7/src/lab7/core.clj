@@ -1310,6 +1310,10 @@
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч';
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' or Count(mp_id)<4;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
-; FIRST select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; SECOND select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
-; THIRD select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
+; INNER JOIN + GROUP BY
+; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
+; THE SAME + HAVING
+; 3 select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
+
+; on ~, case
+; select OrderID, Quantity, CASE WHEN Quantity > 30 THEN "The quantity is greater than 30" WHEN Quantity = 30 THEN "The quantity is 30" ELSE "The quantity is under 30" END AS QuantityText FROM OrderDetails;
