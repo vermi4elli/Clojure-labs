@@ -469,25 +469,21 @@
 (defn select
   [query commands joinClause groupClause havingClause]
   (println "================SELECT===============")
-  (print "joinClause: ")
-  (println joinClause)
-  (print "groupClause: ")
-  (println groupClause)
-  (print "commands: ")
-  (println commands)
-  (let [usedJoin (not (nil? joinClause))
-        usedGroup (not (nil? groupClause))
-        usedHaving (not (nil? havingClause))
-        field1 (if usedJoin
+  (print "havingClause: ")
+  (println havingClause)
+  (let [usedJoin? (some? joinClause)
+        usedGroup? (some? groupClause)
+        usedHaving? (some? havingClause)
+        field1 (if usedJoin?
                  (get joinClause :field1)
                  nil)
-        field2 (if usedJoin
+        field2 (if usedJoin?
                  (get joinClause :field2)
                  nil)
-        file1 (if usedJoin
+        file1 (if usedJoin?
                 (get joinClause :file1)
                 nil)
-        file2 (if usedJoin
+        file2 (if usedJoin?
                 (get joinClause :file2)
                 nil)
         data (cond
@@ -506,9 +502,26 @@
                ; else
                :else (choose_file (get query :file)))
         columns (get query :columns)
+        having_columns (get havingClause :columns)
+        having_select_usual (if usedHaving?
+                              (for [column having_columns]
+                                (if (nil? (get column :function))
+                                  (if usedJoin?
+                                    (keyword (str (get column :file)
+                                                  "."
+                                                  (get column :column)))
+                                    (keyword (get column :column)))
+                                  nil))
+                              [])
+        having_select_functions (if usedHaving?
+                                  (vec (remove nil? (for [column having_columns]
+                                                      (if (some? (get column :function))
+                                                        column
+                                                        nil))))
+                                  [])
         columns_usual_vector (vec (remove nil? (for [column columns]
                                                  (if (nil? (get column :function))
-                                                   (if usedJoin
+                                                   (if usedJoin?
                                                      (keyword (str (get column :file)
                                                                    "."
                                                                    (get column :column)))
@@ -518,23 +531,27 @@
                                                      (if (some? (get column :function))
                                                        column
                                                        nil))))
-        groupByDataMap (if usedGroup
+        groupByDataMap (if usedGroup?
                          (group-by (keyword (get groupClause :column)) data)
                          nil)
-        groupedDataKeys (if usedGroup
+        groupedDataKeys (if usedGroup?
                           (keys groupByDataMap)
                           nil)
-        select_usual (if usedGroup
+        select_usual (if usedGroup?
                        (apply merge (for [elem groupedDataKeys]
                                 (assoc {} elem (select-keys (first (get groupByDataMap elem)) columns_usual_vector))))
                        (for [line data]
                          (select-keys line columns_usual_vector)))
         select_functions (callFunctions columns_functions_vector
-                                        usedJoin
-                                        usedGroup
+                                        usedJoin?
+                                        usedGroup?
                                         groupClause
                                         data)]
-    (if usedGroup
+    (print "columns_usual_vector: ")
+    (println columns_usual_vector)
+    (print "columns_functions_vector: ")
+    (println columns_functions_vector)
+    (if usedGroup?
       (cond
         (empty? select_usual) (for [groupDataKey groupedDataKeys]
                                 (get select_functions groupDataKey))
@@ -542,7 +559,7 @@
                                 (merge
                                   (get select_functions groupDataKey)
                                   (get select_usual groupDataKey)))
-                    result (if usedHaving
+                    result (if usedHaving?
                              nil
                              resultRaw)]
                 result))
@@ -1211,8 +1228,9 @@
 ; select Count(mp_id), full_name from mp-posts_full group by full_name;
 ; ERROR -> select mp_id, full_name from mp-posts_full group by full_name;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full where Count(mp_id)>=10 group by full_name;
+; select Count(mp_id), full_name from mp-posts_full where Count(mp_id)>=10 group by full_name;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by full_name;
 
 ; on ~, having
-; select Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
+; select Count(mp_id), Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч';
