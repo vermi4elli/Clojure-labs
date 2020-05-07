@@ -308,8 +308,6 @@
                                            ">"))
                              (callFunction column usedJoin usedGroup data))))))
 
-; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
-
 ; ========================================
 ; Implementation for JOIN queries
 
@@ -849,7 +847,16 @@
         operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "=", "<" "<", ">" ">"}
         operation (first (remove nil? (for [element (keys operationsTranslations)]
                                         (if-not (nil? (clojure.string/index-of clause element)) element))))
-        column (clojure.string/replace (clojure.string/replace (subs clause 0 (clojure.string/index-of clause operation)) "(" "<") ")" ">")
+        column_raw (clojure.string/replace (clojure.string/replace (subs clause 0 (clojure.string/index-of clause operation)) "(" "<") ")" ">")
+        column (if (and (some? (clojure.string/index-of column_raw "<"))
+                        (some? (clojure.string/index-of column_raw ".")))
+                 (str (subs column_raw (+ 1 (clojure.string/index-of column_raw ".")) (clojure.string/index-of column_raw "<"))
+                      "<"
+                      (subs column_raw 0 (clojure.string/index-of column_raw "."))
+                      "."
+                      (subs column_raw (+ 1 (clojure.string/index-of column_raw "<")) (clojure.string/index-of column_raw ">"))
+                      ">")
+                 column_raw)
         finalOperation (get operationsTranslations (if (some #(= "not" %) clause_undone)
                                                      (get oppositeOperations operation)
                                                      operation))
@@ -878,6 +885,7 @@
                                                       (getSimpleClause element))}
       )))
 
+; parses count<mps-declarations_rada.mp_id>
 (defn parseHavingColumn
   [raw_column file]
   (let [initialRawColumn (clojure.string/trimr (clojure.string/replace (clojure.string/replace raw_column "<" "(") ">" ")"))
@@ -885,16 +893,18 @@
         indexRight (index-of initialRawColumn ")")
         indexDot (index-of initialRawColumn ".")
         column (cond
-                 (some? indexLeft) (subs initialRawColumn (+ 1 indexLeft) indexRight)
+                 (and (some? indexDot)
+                      (some? indexRight)) (subs initialRawColumn (+ 1 indexDot) indexRight)
                  (some? indexDot) (subs initialRawColumn (+ 1 indexDot))
+                 (some? indexLeft) (subs initialRawColumn (+ 1 indexLeft) indexRight)
                  :else initialRawColumn)
-        file_temp (if (some? indexDot)
-                    (subs initialRawColumn 0 indexDot)
-                    file)
+        file_temp (cond
+                    (and (some? indexDot)
+                         (some? indexLeft)) (subs initialRawColumn (+ 1 indexLeft) indexDot)
+                    (some? indexDot) (subs initialRawColumn 0 indexDot)
+                    :else file)
         function (if (some? indexLeft)
-                   (if (some? indexDot)
-                     (subs initialRawColumn (+ 1 indexDot) indexLeft)
-                     (subs initialRawColumn 0 indexLeft))
+                   (subs initialRawColumn 0 indexLeft)
                    nil)]
     {:column column
      :function function
@@ -1298,7 +1308,7 @@
 ; on ~, having
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч';
-; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' and Count(mp_id)>=10;
+; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' or Count(mp_id)<4;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
 ; FIRST select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; SECOND select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
