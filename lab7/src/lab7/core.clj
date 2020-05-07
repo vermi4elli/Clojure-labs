@@ -797,11 +797,33 @@
                                                       (getSimpleClause element))}
       )))
 
-; (getHavingClause ["mp_id" ">=" "21000" "and" "mp_id" "<=" "21200"])
-; (getHavingClause ["count(mp_id)" ">=" "21000"])
-; (getHavingClause ["full_name" ">=" "'a" "b'"])
+(defn parseHavingColumn
+  [raw_column file]
+  (let [initialRawColumn (clojure.string/trimr (clojure.string/replace (clojure.string/replace raw_column "<" "(") ">" ")"))
+        indexLeft (index-of initialRawColumn "(")
+        indexRight (index-of initialRawColumn ")")
+        indexDot (index-of initialRawColumn ".")
+        column (cond
+                 (some? indexLeft) (subs initialRawColumn (+ 1 indexLeft) indexRight)
+                 (some? indexDot) (subs initialRawColumn (+ 1 indexDot))
+                 :else initialRawColumn)
+        file_temp (if (some? indexDot)
+                    (subs initialRawColumn 0 indexDot)
+                    file)
+        function (if (some? indexLeft)
+                   (if (some? indexDot)
+                     (subs initialRawColumn (+ 1 indexDot) indexLeft)
+                     (subs initialRawColumn 0 indexLeft))
+                   nil)]
+    {:column column
+     :function function
+     :file file_temp}))
+
+; (getHavingClause ["mp_id" ">=" "21000" "and" "mp_id" "<=" "21200" "and" "count(mp_id)" ">=" "21000"] "temp_file")
+; (getHavingClause ["count(mp_id)" ">=" "21000"] "temp_file")
+; (getHavingClause ["full_name" ">=" "'a" "b'"] "temp_file")
 (defn getHavingClause
-  [query_raw]
+  [query_raw file]
   (println "=====GETHAVINGCLAUSE=====")
   (print "query_raw: ")
   (println query_raw)
@@ -810,12 +832,18 @@
                        (some #(= "or" %) query_raw) "or"
                        :else nil)
         parsedClause (if (some? clauseWord)
-                       (for [elem (parseComplexClause query_raw clauseWord)]
-                         (getSimpleClause elem))
-                       (getSimpleClause query_raw))]
+                       {:clauseWord clauseWord
+                        :clause (for [elem (parseComplexClause query_raw clauseWord)]
+                                  (getSimpleClause elem))}
+                       {:clauseWord nil
+                        :clause (vector (getSimpleClause query_raw))})
+        parsedColumns (for [elem (:clause parsedClause)]
+                        (parseHavingColumn (:column elem) file))]
     (print "parsedClause: ")
     (println parsedClause)
-    parsedClause))
+    (print "parsedColumns: ")
+    (println parsedColumns)
+    (assoc parsedClause :columns parsedColumns)))
 
 ; mp_id name asc
 ; mp_id asc name desc
@@ -1092,9 +1120,9 @@
                        (cond
                          ; first condition
                          (some #(= "order by" %) commands)
-                         (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having")) (.indexOf query_raw "order by")))
+                         (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having")) (.indexOf query_raw "order by")) file)
                          ; second condition
-                         :else (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having"))))
+                         :else (getHavingClause (subvec query_raw (+ 1 (.indexOf query_raw "having"))) file)
                          )
                        nil)]
     (print "commands: ")
