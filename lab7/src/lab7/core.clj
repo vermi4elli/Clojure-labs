@@ -1030,34 +1030,58 @@
 ; )
 (defn getColumns
   [query_raw commands file]
-  ;(println "==================GETCOLUMNS==================")
+  (println "==================GETCOLUMNS==================")
+  (print "query_raw: ")
+  (println query_raw)
+  (print "commands: ")
+  (println commands)
+  (print "file: ")
+  (println file)
   (let [columns (subvec query_raw
                         (if (some #(= "distinct" %) commands)
                           2
                           1)
-                        (.indexOf query_raw "from"))]
-    (processColumns (flatten (for [col columns]
-                               (let [indexLeft (index-of col "(")
-                                     indexRight (index-of col ")")
-                                     indexDot (index-of col ".")
-                                     column (cond
-                                              (some? indexLeft) (subs col (+ 1 indexLeft) indexRight)
-                                              (some? indexDot) (subs col (+ 1 indexDot))
-                                              :else col)
-                                     file_temp (if (some? indexDot)
-                                                 (subs col 0 indexDot)
-                                                 file)
-                                     function (if (some? indexLeft)
-                                                (if (some? indexDot)
-                                                  (subs col (+ 1 indexDot) indexLeft)
-                                                  (subs col 0 indexLeft))
-                                                nil)]
-                                 (if (= "*" column)
-                                   (getColumnsFromStar file_temp)
-                                   {:column column
-                                    :function function
-                                    :file file_temp})
-                                 ))))))
+                        (.indexOf query_raw "from"))
+        usedCase? (some #(= "case" %) commands)]
+    (if usedCase?
+      (let [caseColumns nil
+            ])
+      (processColumns (flatten (for [col columns]
+                                 (let [indexLeft (index-of col "(")
+                                       indexRight (index-of col ")")
+                                       indexDot (index-of col ".")
+                                       column (cond
+                                                (some? indexLeft) (subs col (+ 1 indexLeft) indexRight)
+                                                (some? indexDot) (subs col (+ 1 indexDot))
+                                                :else col)
+                                       file_temp (if (some? indexDot)
+                                                   (subs col 0 indexDot)
+                                                   file)
+                                       function (if (some? indexLeft)
+                                                  (if (some? indexDot)
+                                                    (subs col (+ 1 indexDot) indexLeft)
+                                                    (subs col 0 indexLeft))
+                                                  nil)]
+                                   (if (= "*" column)
+                                     (getColumnsFromStar file_temp)
+                                     {:column column
+                                      :function function
+                                      :file file_temp
+                                      :case nil
+                                      :caseClause nil}))))))))
+
+(defn checkCaseFunction
+  [query]
+  (if (some #(= "case" %) query)
+    (let [indexCase (.indexOf query "case")
+          indexAs (.indexOf query "as")
+          before (subvec query 0 indexCase)
+          after (subvec query (+ 2 indexAs))
+          result (apply conj before (join " " (subvec query indexCase (+ 2 indexAs))) after)]
+      (print "checkCaseFunction result: ")
+      (println result)
+      (checkCaseFunction result))
+    query))
 
 ; replaces '_type_' 'join' strings in the query to one '_type_ join' string
 (defn checkJoinFunction
@@ -1109,7 +1133,8 @@
     (System/exit 0)
     (-> (checkByFunction query_raw_raw "order by")
         (checkByFunction "group by")
-        (checkJoinFunction))))
+        (checkJoinFunction)
+        (checkCaseFunction))))
 
 ; parses the query in the format:
 ; { :commands ["command1 (e.g. select)" "command2 (e.g. from)" ...]
@@ -1140,8 +1165,12 @@
 ; }
 (defn parseQuery
   [query_raw_raw commands_list]
-  (let [query_raw (joinSeparateCommands query_raw_raw)
-        commands (getCommands query_raw commands_list)
+  (let [usedCase? (some #(= "case" %) query_raw_raw)
+        query_raw (joinSeparateCommands query_raw_raw)
+        commands_raw (getCommands query_raw commands_list)
+        commands (if usedCase?
+                   (conj commands_raw "case")
+                   commands_raw)
         file (nth query_raw (+ 1 (.indexOf query_raw "from")))
         columns (getColumns query_raw commands file)
         query {:file file
@@ -1243,7 +1272,7 @@
   (println "Write your commands here!")
   (print "~> ")
   (flush)
-  (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on" "having"])
+  (def commands_list ["select" "from" "where" "distinct" "order by" "group by" "inner join" "full outer join" "left join" "on" "having" "case"])
   (loop [input (read-line)]
     (executeQuery (parseQuery (clojure.string/split (clojure.string/lower-case (clojure.string/replace input #"[,;]" "")) #" ") commands_list)))
   (recur (-main)))
@@ -1313,7 +1342,7 @@
 ; INNER JOIN + GROUP BY
 ; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
 ; THE SAME + HAVING
-; 3 select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
+; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
 
 ; on ~, case
-; select OrderID, Quantity, CASE WHEN Quantity > 30 THEN "The quantity is greater than 30" WHEN Quantity = 30 THEN "The quantity is 30" ELSE "The quantity is under 30" END AS QuantityText FROM OrderDetails;
+; select OrderID, Quantity, case when Quantity > 30 then "The quantity is greater than 30" when Quantity = 30 then "The quantity is 30" else "The quantity is under 30" end as QuantityText from OrderDetails;
