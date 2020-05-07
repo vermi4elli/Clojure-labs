@@ -264,7 +264,11 @@
   ;(print "data: ")
   ;(println data)
   (if usedGroup
-    (let [groupColumn (get groupClause :column)
+    (let [groupColumn (if usedJoin
+                        (str (get groupClause :file)
+                             "."
+                             (get groupClause :column))
+                        (get groupClause :column))
           groupedData (group-by (keyword groupColumn) data)
           groupedDataKeys (keys groupedData)
           functionResultsRaw (for [column columns]
@@ -288,6 +292,10 @@
       ;(println functionResultsRaw)
       ;(print "functionResults: ")
       ;(println functionResults)
+      ;(print "groupColumn: ")
+      ;(print "groupedData: ")
+      ;(print "groupedDataKeys: ")
+      ;(println "==============")
       functionResults)
     (apply merge (for [column columns]
                    (assoc {} (keyword (str (get column :function)
@@ -299,6 +307,8 @@
                                              (get column :column))
                                            ">"))
                              (callFunction column usedJoin usedGroup data))))))
+
+; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
 
 ; ========================================
 ; Implementation for JOIN queries
@@ -529,8 +539,6 @@
 (defn select
   [query commands joinClause groupClause havingClause]
   (println "================SELECT===============")
-  (print "havingClause: ")
-  (println havingClause)
   (let [usedJoin? (some? joinClause)
         usedGroup? (some? groupClause)
         usedHaving? (some? havingClause)
@@ -628,7 +636,11 @@
                                          (conj columns_functions (nth having_columns_usual index))))
                                      columns_functions))
         groupByDataMap (if usedGroup?
-                         (group-by (keyword (get groupClause :column)) data)
+                         (group-by (keyword (if usedJoin?
+                                              (str (get groupClause :file)
+                                                   "."
+                                                   (get groupClause :column))
+                                              (get groupClause :column))) data)
                          nil)
         groupedDataKeys (if usedGroup?
                           (keys groupByDataMap)
@@ -643,6 +655,8 @@
                                         usedGroup?
                                         groupClause
                                         data)]
+    (print "groupByDataMap: ")
+    (println groupByDataMap)
     (print "columns_usual_vector: ")
     (println columns_usual_vector)
     (print "columns_functions_vector: ")
@@ -651,6 +665,10 @@
     (println having_columns_usual)
     (print "having_columns_functions: ")
     (println having_columns_functions)
+    (print "select_usual: ")
+    (println select_usual)
+    (print "select_functions: ")
+    (println select_functions)
     (print "columns_list: ")
     (println columns_list)
     (if usedGroup?
@@ -1284,4 +1302,4 @@
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
 ; FIRST select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; SECOND select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
-; THIRD select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having Count(mps-declarations_rada.mp_id)<;
+; THIRD select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
