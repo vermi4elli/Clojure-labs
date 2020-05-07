@@ -252,7 +252,7 @@
 
 (defn callFunctions
   [columns usedJoin usedGroup groupClause data]
-  (println "=====CALLFUNCTIONS=====")
+  ;(println "=====CALLFUNCTIONS=====")
   ;(print "columns: ")
   ;(println columns)
   ;(print "usedJoin: ")
@@ -284,10 +284,10 @@
                             (apply merge (for [groupedDataKey groupedDataKeys]
                                            (assoc {} groupedDataKey (apply merge (for [singleFunctionData functionResultsRaw]
                                                                                    (get singleFunctionData groupedDataKey)))))))]
-      (print "functionResultsRaw: ")
-      (println functionResultsRaw)
-      (print "functionResults: ")
-      (println functionResults)
+      ;(print "functionResultsRaw: ")
+      ;(println functionResultsRaw)
+      ;(print "functionResults: ")
+      ;(println functionResults)
       functionResults)
     (apply merge (for [column columns]
                    (assoc {} (keyword (str (get column :function)
@@ -464,121 +464,6 @@
                                 nil)))))))
 
 ; ========================================
-; Implementation for SELECT query
-
-(defn select
-  [query commands joinClause groupClause havingClause]
-  (println "================SELECT===============")
-  (print "havingClause: ")
-  (println havingClause)
-  (let [usedJoin? (some? joinClause)
-        usedGroup? (some? groupClause)
-        usedHaving? (some? havingClause)
-        field1 (if usedJoin?
-                 (get joinClause :field1)
-                 nil)
-        field2 (if usedJoin?
-                 (get joinClause :field2)
-                 nil)
-        file1 (if usedJoin?
-                (get joinClause :file1)
-                nil)
-        file2 (if usedJoin?
-                (get joinClause :file2)
-                nil)
-        data (cond
-               ; first condition
-               (some #(= "inner join" %) commands)
-               ; first action
-               (inner-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
-               ; second condition
-               (some #(= "full outer join" %) commands)
-               ; second action
-               (full-outer-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
-               ; third condition
-               (some #(= "left join" %) commands)
-               ; third action
-               (left-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
-               ; else
-               :else (choose_file (get query :file)))
-        columns (get query :columns)
-        having_columns (get havingClause :columns)
-        having_select_usual (if usedHaving?
-                              (for [column having_columns]
-                                (if (nil? (get column :function))
-                                  (if usedJoin?
-                                    (keyword (str (get column :file)
-                                                  "."
-                                                  (get column :column)))
-                                    (keyword (get column :column)))
-                                  nil))
-                              [])
-        having_select_functions (if usedHaving?
-                                  (vec (remove nil? (for [column having_columns]
-                                                      (if (some? (get column :function))
-                                                        column
-                                                        nil))))
-                                  [])
-        columns_usual_vector (vec (remove nil? (for [column columns]
-                                                 (if (nil? (get column :function))
-                                                   (if usedJoin?
-                                                     (keyword (str (get column :file)
-                                                                   "."
-                                                                   (get column :column)))
-                                                     (keyword (get column :column)))
-                                                   nil))))
-        columns_functions_vector (vec (remove nil? (for [column columns]
-                                                     (if (some? (get column :function))
-                                                       column
-                                                       nil))))
-        groupByDataMap (if usedGroup?
-                         (group-by (keyword (get groupClause :column)) data)
-                         nil)
-        groupedDataKeys (if usedGroup?
-                          (keys groupByDataMap)
-                          nil)
-        select_usual (if usedGroup?
-                       (apply merge (for [elem groupedDataKeys]
-                                (assoc {} elem (select-keys (first (get groupByDataMap elem)) columns_usual_vector))))
-                       (for [line data]
-                         (select-keys line columns_usual_vector)))
-        select_functions (callFunctions columns_functions_vector
-                                        usedJoin?
-                                        usedGroup?
-                                        groupClause
-                                        data)]
-    (print "columns_usual_vector: ")
-    (println columns_usual_vector)
-    (print "columns_functions_vector: ")
-    (println columns_functions_vector)
-    (if usedGroup?
-      (cond
-        (empty? select_usual) (for [groupDataKey groupedDataKeys]
-                                (get select_functions groupDataKey))
-        :else (let [resultRaw (for [groupDataKey groupedDataKeys]
-                                (merge
-                                  (get select_functions groupDataKey)
-                                  (get select_usual groupDataKey)))
-                    result (if usedHaving?
-                             nil
-                             resultRaw)]
-                result))
-      (cond
-        (empty? select_functions) select_usual
-        (empty? select_usual) (vector select_functions)
-        :else (let [result (apply merge (first select_usual) (vector select_functions))]
-                (if (= (type result) clojure.lang.PersistentArrayMap)
-                  (vector result)
-                  result))))))
-
-; ========================================
-; Implementation for SELECT DISTINCT query
-
-(defn select_distinct
-  [query commands joinClause groupClause havingClause]
-  (vec (set (select query commands joinClause groupClause havingClause))))
-
-; ========================================
 ; Implementation for WHERE query
 
 ; checks each line in
@@ -636,6 +521,165 @@
     ;(println clauseWord)
     (remove nil? (for [element selected_data]
                    (when (check_true clause clauseWord element) element)))))
+
+
+; ========================================
+; Implementation for SELECT query
+
+(defn select
+  [query commands joinClause groupClause havingClause]
+  (println "================SELECT===============")
+  (print "havingClause: ")
+  (println havingClause)
+  (let [usedJoin? (some? joinClause)
+        usedGroup? (some? groupClause)
+        usedHaving? (some? havingClause)
+        field1 (if usedJoin?
+                 (get joinClause :field1)
+                 nil)
+        field2 (if usedJoin?
+                 (get joinClause :field2)
+                 nil)
+        file1 (if usedJoin?
+                (get joinClause :file1)
+                nil)
+        file2 (if usedJoin?
+                (get joinClause :file2)
+                nil)
+        data (cond
+               ; first condition
+               (some #(= "inner join" %) commands)
+               ; first action
+               (inner-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
+               ; second condition
+               (some #(= "full outer join" %) commands)
+               ; second action
+               (full-outer-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
+               ; third condition
+               (some #(= "left join" %) commands)
+               ; third action
+               (left-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
+               ; else
+               :else (choose_file (get query :file)))
+        columns (get query :columns)
+        columns_list (vec (for [column columns]
+                            (let [col_name (if usedJoin?
+                                             (str (get column :file)
+                                                  "."
+                                                  (get column :column))
+                                             (get column :column))
+                                  col_function (get column :function)]
+                              (keyword
+                                  (if (some? col_function)
+                                    (str col_function
+                                         "<"
+                                         col_name
+                                         ">")
+                                    col_name)))))
+        having_columns (get havingClause :columns)
+        having_columns_usual (if usedHaving?
+                               (vec (remove nil? (for [column having_columns]
+                                                   (if (nil? (get column :function))
+                                                     (if usedJoin?
+                                                       (keyword (str (get column :file)
+                                                                     "."
+                                                                     (get column :column)))
+                                                       (keyword (get column :column)))
+                                                     nil))))
+                              [])
+        having_columns_functions (if usedHaving?
+                                  (vec (remove nil? (for [column having_columns]
+                                                      (if (some? (get column :function))
+                                                        column
+                                                        nil))))
+                                  [])
+        columns_usual_vector_raw (vec (remove nil? (for [column columns]
+                                                 (if (nil? (get column :function))
+                                                   (if usedJoin?
+                                                     (keyword (str (get column :file)
+                                                                   "."
+                                                                   (get column :column)))
+                                                     (keyword (get column :column)))
+                                                   nil))))
+        columns_functions_vector_raw (vec (remove nil? (for [column columns]
+                                                     (if (some? (get column :function))
+                                                       column
+                                                       nil))))
+        columns_usual_vector (loop [index 0
+                                    limit (count having_columns_usual)
+                                    columns_usual columns_usual_vector_raw]
+                               (if (< index limit)
+                                 (recur
+                                   (+' 1 index)
+                                   limit
+                                   (if (some #(= (nth having_columns_usual index) %) columns_usual)
+                                     columns_usual
+                                     (conj columns_usual (nth having_columns_usual index))))
+                                 columns_usual))
+        columns_functions_vector (loop [index 0
+                                        limit (count having_columns_functions)
+                                        columns_functions columns_functions_vector_raw]
+                                   (if (< index limit)
+                                     (recur
+                                       (+' 1 index)
+                                       limit
+                                       (if (some #(= (nth having_columns_functions index) %) columns_functions)
+                                         columns_functions
+                                         (conj columns_functions (nth having_columns_usual index))))
+                                     columns_functions))
+        groupByDataMap (if usedGroup?
+                         (group-by (keyword (get groupClause :column)) data)
+                         nil)
+        groupedDataKeys (if usedGroup?
+                          (keys groupByDataMap)
+                          nil)
+        select_usual (if usedGroup?
+                       (apply merge (for [elem groupedDataKeys]
+                                (assoc {} elem (select-keys (first (get groupByDataMap elem)) columns_usual_vector))))
+                       (for [line data]
+                         (select-keys line columns_usual_vector)))
+        select_functions (callFunctions columns_functions_vector
+                                        usedJoin?
+                                        usedGroup?
+                                        groupClause
+                                        data)]
+    (print "columns_usual_vector: ")
+    (println columns_usual_vector)
+    (print "columns_functions_vector: ")
+    (println columns_functions_vector)
+    (print "having_columns_usual: ")
+    (println having_columns_usual)
+    (print "having_columns_functions: ")
+    (println having_columns_functions)
+    (print "columns_list: ")
+    (println columns_list)
+    (if usedGroup?
+      (cond
+        (empty? select_usual) (for [groupDataKey groupedDataKeys]
+                                (get select_functions groupDataKey))
+        :else (let [resultRaw (for [groupDataKey groupedDataKeys]
+                                (merge
+                                  (get select_functions groupDataKey)
+                                  (get select_usual groupDataKey)))
+                    result (if usedHaving?
+                             (for [line (where resultRaw havingClause)]
+                               (select-keys line columns_list))                      ; replace this with smth useful
+                             resultRaw)]
+                result))
+      (cond
+        (empty? select_functions) select_usual
+        (empty? select_usual) (vector select_functions)
+        :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                (if (= (type result) clojure.lang.PersistentArrayMap)
+                  (vector result)
+                  result))))))
+
+; ========================================
+; Implementation for SELECT DISTINCT query
+
+(defn select_distinct
+  [query commands joinClause groupClause havingClause]
+  (vec (set (select query commands joinClause groupClause havingClause))))
 
 (defn orderBy
   [query orderClause]
@@ -779,11 +823,12 @@
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone]
+  (print "=====GETSIMPLECLAUSE=====")
   (let [clause (if (some #(= "not" %) clause_undone)
                  (clojure.string/join " " (subvec clause_undone 1))
                  (clojure.string/join " " (subvec clause_undone 0)))
-        oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">="}
-        operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "="}
+        oppositeOperations {">=" "<=", "<>" "=", "=" "<>", "<=" ">=", "<" ">", ">" "<"}
+        operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "=", "<" "<", ">" ">"}
         operation (first (remove nil? (for [element (keys operationsTranslations)]
                                         (if-not (nil? (clojure.string/index-of clause element)) element))))
         column (clojure.string/replace (clojure.string/replace (subs clause 0 (clojure.string/index-of clause operation)) "(" "<") ")" ">")
@@ -791,6 +836,7 @@
                                                      (get oppositeOperations operation)
                                                      operation))
         bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation))))]
+    (println "finished getSimpleClause")
     {:column column
      :operation finalOperation
      :bound (if (and (starts-with? bound "'") (ends-with? bound "'"))
@@ -895,7 +941,7 @@
                                            (join (for [element (rest el)]
                                                    (str
                                                      "(:"
-                                                     element
+                                                     (clojure.string/replace (clojure.string/replace element "(" "<") ")" ">")
                                                      " "
                                                      (if (= "desc" (first el))
                                                        "%2"
@@ -908,7 +954,7 @@
                                             (join (for [element (rest el)]
                                                     (str
                                                       "(:"
-                                                      element
+                                                      (clojure.string/replace (clojure.string/replace element "(" "<") ")" ">")
                                                       " "
                                                       (if (= "desc" (first el))
                                                         "%1"
@@ -1197,7 +1243,7 @@
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович';
 ; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' or full_name='Заремський Максим Валентинович' or mp_id>=21200;
 ; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and not full_name='Заремський Максим Валентинович' and mp_id>=21052 and mp_id<=21102;
-; select distinct mp_id, full_name from mp-posts_full where not full_name='Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
+; select distinct mp_id, full_name from mp-posts_full where not full_name<>'Яцик Юлія Григорівна' and mp_id>=21052 and mp_id<=21056;
 
 ; on ~, functions, functions + non-functions
 ; select mp_id, full_name, count(mp_id), count(full_name) from mp-posts_full order by mp_id asc;
@@ -1232,5 +1278,10 @@
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by full_name;
 
 ; on ~, having
-; select Count(mp_id), Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
+; select Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч';
+; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' and Count(mp_id)>=10;
+; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
+; FIRST select mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; SECOND select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
+; THIRD select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having Count(mps-declarations_rada.mp_id)<;
