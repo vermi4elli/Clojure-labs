@@ -4,3 +4,5 @@
 - lab3, done
 - lab4, done
 - lab5, done
+- lab6, done
+- lab7, done
