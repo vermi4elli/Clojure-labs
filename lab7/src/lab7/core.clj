@@ -632,20 +632,7 @@
                                 (vector result)
                                 result))))
         result (if usedCase?
-                 (let [columns_all (apply conj columns_list (for [col columns_case]
-                                                              (keyword (str (if (some? (get col :function))
-                                                                              (str (get col :function)
-                                                                                   "<")
-                                                                              "")
-                                                                            (if usedJoin?
-                                                                              (str (get col :file)
-                                                                                   ".")
-                                                                              "")
-                                                                            (get col :column)
-                                                                            (if (some? (get col :function))
-                                                                              ">"
-                                                                              "")))))
-                       inter_result (for [line resultRaw]
+                 (let [inter_result (for [line resultRaw]
                                       (apply merge
                                              line
                                              (for [col columns_case]
@@ -658,20 +645,10 @@
                                                      col_list_remade (if (some some? col_list_raw)
                                                                        (first (remove nil? col_list_raw))
                                                                        (get (get col :caseClause) :elseCondition))]
-                                                 (assoc {} (keyword col_name) col_list_remade))))
-                                      )
-                       final_result (for [line inter_result]
-                                      (select-keys line columns_all))]
-                   final_result)
+                                                 (assoc {} (keyword col_name) col_list_remade)))))]
+                   inter_result)
                  resultRaw)]
     result))
-
-; caseClause can be of this type:
-; :caseClause {
-;              {:whenConditions ({:clause {:column "quantity", :operation ">", :bound "30"}, :value "the quantity is greater than 30"}
-;                                {:clause {:column "quantity", :operation "=", :bound "30"}, :value "the quantity is 30"})
-;               :elseCondition "the quantity is under 30"}
-;             }
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
@@ -1007,6 +984,14 @@
                       (eval (read-string else_raw)))]
     else_result))
 
+; caseClause can be of this type:
+; :caseClause {
+;              {:clauseWord "and"
+;               :whenConditions ({:clause {:column "quantity", :operation ">", :bound "30"}, :value "the quantity is greater than 30"}
+;                                {:clause {:column "quantity", :operation "=", :bound "30"}, :value "the quantity is 30"})
+;               :elseCondition "the quantity is under 30"}
+;             }
+
 (defn getCaseWhenClause
   [query_raw]
   ;(println "=====getCaseWhenClause=====")
@@ -1118,8 +1103,6 @@
           before (subvec query 0 indexCase)
           after (subvec query (+ 2 indexAs))
           result (apply conj before (join " " (subvec query indexCase (+ 2 indexAs))) after)]
-      (print "checkCaseFunction result: ")
-      (println result)
       (checkCaseFunction result))
     query))
 
@@ -1385,5 +1368,13 @@
 ; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having Count(mps-declarations_rada.mp_id)<=21;
 
 ; on ~, case
+; THE NEXT ONE WITH SURPRISE WITH COUNTING
 ; select distinct mp_id, case when mp_id<2000 and mp_id>1000 then 'Lesser than 2000 and bigger than 1000' when mp_id<10000 then 'Between 2000 and 10000' when mp_id<20000 then 'Between 10000 and 20000' else 'Bigger than 20000' end as Boundary from mp-posts_full order by mp_id;
 ; select distinct mp_id, case when mp_id<2000 then 'Less than 2000' when mp_id<10000 then 'Between 2000 and 10000' when mp_id<20000 then 'Between 10000 and 20000' else 'Bigger than 20000' end as Boundary from mp-posts_full order by mp_id;
+; select distinct mp_id, case when mp_id<10000 then 'Lesser than 10000' else 'Bigger than 10000' end as Boundary from mp-posts_full order by mp_id;
+; CASE + INNER JOIN
+; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name, case when mps-declarations_rada.mp_id<10000 then 'Lesser than 10000' else 'Bigger or equal than 10000' end as boundary from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; CASE + INNER JOIN + GROUP BY
+; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name, case when Count(mps-declarations_rada.mp_id)<=20 then 'lesser than 20' else 'bigger or equal than 20' end as boundary from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name order by Count(mps-declarations_rada.mp_id);
+; ~ + more cases
+; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name, case when Count(mps-declarations_rada.mp_id)<=20 then 'lesser than 20' else 'bigger or equal than 20' end as boundary, case when Count(mps-declarations_rada.mp_id)<=20 then 'bigger than 20' else 'lesser or equal than 20' end as boundary_reverse from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name order by Count(mps-declarations_rada.mp_id);
