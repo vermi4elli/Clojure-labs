@@ -346,21 +346,6 @@
    {:mp_id 150 :1 5}
    ])
 
-; EXAMPLE OF WORK
-;(left-join test_column1 test_column2 test1 test2)
-;=>
-;({:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3}
-; {:test1.id 3, :test1.1 3, :test2.mp_id nil, :test2.1 nil}
-; {:test1.id 4, :test1.1 4, :test2.mp_id nil, :test2.1 nil})
-;(left-join test_column2 test_column1 test2 test1)
-;=>
-;({:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
-; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
-; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2}
-; {:test2.mp_id 100, :test2.1 4, :test1.id nil, :test1.1 nil}
-; {:test2.mp_id 150, :test2.1 5, :test1.id nil, :test1.1 nil})
 (defn left-join
   [column1 column2 table1 table2]
   (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
@@ -391,25 +376,6 @@
                                   (merge (nth table i) el))
                                 nil)))))))
 
-; EXAMPLE OF WORK
-;(full-outer-join test_column1 test_column2 test1 test2)
-;=>
-;[{:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3}
-; {:test1.id 3, :test1.1 3, :test2.mp_id nil, :test2.1 nil}
-; {:test1.id 4, :test1.1 4, :test2.mp_id nil, :test2.1 nil}
-; {:test1.id nil, :test1.1 nil, :test2.mp_id 100, :test2.1 4}
-; {:test1.id nil, :test1.1 nil, :test2.mp_id 150, :test2.1 5}]
-;(full-outer-join test_column2 test_column1 test2 test1)
-;=>
-;[{:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
-; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
-; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2}
-; {:test2.mp_id 100, :test2.1 4, :test1.id nil, :test1.1 nil}
-; {:test2.mp_id 150, :test2.1 5, :test1.id nil, :test1.1 nil}
-; {:test2.mp_id nil, :test2.1 nil, :test1.id 3, :test1.1 3}
-; {:test2.mp_id nil, :test2.1 nil, :test1.id 4, :test1.1 4}]
 (defn full-outer-join
   [column1 column2 table1_raw table2_raw]
   (let [left_outer_join (vec (left-join column1 column2 table1_raw table2_raw))
@@ -434,17 +400,6 @@
                                                 nil)))))]
     (apply conj left_outer_join right_anti_join)))
 
-; EXAMPLE OF WORK:
-;(inner-join test_column1 test_column2 test1 test2)
-;=>
-;({:test1.id 1, :test1.1 1, :test2.mp_id 1, :test2.1 1}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 2}
-; {:test1.id 2, :test1.1 2, :test2.mp_id 2, :test2.1 3})
-;(inner-join test_column2 test_column1 test2 test1)
-;=>
-;({:test2.mp_id 1, :test2.1 1, :test1.id 1, :test1.1 1}
-; {:test2.mp_id 2, :test2.1 2, :test1.id 2, :test1.1 2}
-; {:test2.mp_id 2, :test2.1 3, :test1.id 2, :test1.1 2})
 (defn inner-join
   [column1 column2 table1 table2]
   (remove nil? (flatten (let [table (modifyColumnNames table1 (get column1 :file))
@@ -567,7 +522,10 @@
                (left-join {:field field1 :file file1} {:field field2 :file file2} (choose_file file1) (choose_file file2))
                ; else
                :else (choose_file (get query :file)))
-        columns (get query :columns)
+        columns_raw (get query :columns)
+        usedCase? (some some? (remove false? (for [column columns_raw] (some? (get column :case)))))
+        columns_case (filterv #(some? (get % :case)) columns_raw)
+        columns (filterv #(nil? (get % :case)) columns_raw)
         columns_list (vec (for [column columns]
                             (let [col_name (if usedJoin?
                                              (str (get column :file)
@@ -652,43 +610,68 @@
                                         usedJoin?
                                         usedGroup?
                                         groupClause
-                                        data)]
-    (print "groupByDataMap: ")
-    (println groupByDataMap)
-    (print "columns_usual_vector: ")
-    (println columns_usual_vector)
-    (print "columns_functions_vector: ")
-    (println columns_functions_vector)
-    (print "having_columns_usual: ")
-    (println having_columns_usual)
-    (print "having_columns_functions: ")
-    (println having_columns_functions)
-    (print "select_usual: ")
-    (println select_usual)
-    (print "select_functions: ")
-    (println select_functions)
-    (print "columns_list: ")
-    (println columns_list)
-    (if usedGroup?
-      (cond
-        (empty? select_usual) (for [groupDataKey groupedDataKeys]
-                                (get select_functions groupDataKey))
-        :else (let [resultRaw (for [groupDataKey groupedDataKeys]
-                                (merge
-                                  (get select_functions groupDataKey)
-                                  (get select_usual groupDataKey)))
-                    result (if usedHaving?
-                             (for [line (where resultRaw havingClause)]
-                               (select-keys line columns_list))                      ; replace this with smth useful
-                             resultRaw)]
-                result))
-      (cond
-        (empty? select_functions) select_usual
-        (empty? select_usual) (vector select_functions)
-        :else (let [result (apply merge (first select_usual) (vector select_functions))]
-                (if (= (type result) clojure.lang.PersistentArrayMap)
-                  (vector result)
-                  result))))))
+                                        data)
+        resultRaw (if usedGroup?
+                    (cond
+                      (empty? select_usual) (for [groupDataKey groupedDataKeys]
+                                              (get select_functions groupDataKey))
+                      :else (let [resultRaw (for [groupDataKey groupedDataKeys]
+                                              (merge
+                                                (get select_functions groupDataKey)
+                                                (get select_usual groupDataKey)))
+                                  result (if usedHaving?
+                                           (for [line (where resultRaw havingClause)]
+                                             (select-keys line columns_list))
+                                           resultRaw)]
+                              result))
+                    (cond
+                      (empty? select_functions) select_usual
+                      (empty? select_usual) (vector select_functions)
+                      :else (let [result (apply merge (first select_usual) (vector select_functions))]
+                              (if (= (type result) clojure.lang.PersistentArrayMap)
+                                (vector result)
+                                result))))
+        result (if usedCase?
+                 (let [columns_all (apply conj columns_list (for [col columns_case]
+                                                              (keyword (str (if (some? (get col :function))
+                                                                              (str (get col :function)
+                                                                                   "<")
+                                                                              "")
+                                                                            (if usedJoin?
+                                                                              (str (get col :file)
+                                                                                   ".")
+                                                                              "")
+                                                                            (get col :column)
+                                                                            (if (some? (get col :function))
+                                                                              ">"
+                                                                              "")))))
+                       inter_result (for [line resultRaw]
+                                      (apply merge
+                                             line
+                                             (for [col columns_case]
+                                               (let [col_name (get col :column)
+                                                     whenConditions (get (get col :caseClause) :whenConditions)
+                                                     col_list_raw (for [condition whenConditions]
+                                                                    (if (check_true (get condition :clause) (get condition :clauseWord) line)
+                                                                      (get condition :value)
+                                                                      nil))
+                                                     col_list_remade (if (some some? col_list_raw)
+                                                                       (first (remove nil? col_list_raw))
+                                                                       (get (get col :caseClause) :elseCondition))]
+                                                 (assoc {} (keyword col_name) col_list_remade))))
+                                      )
+                       final_result (for [line inter_result]
+                                      (select-keys line columns_all))]
+                   final_result)
+                 resultRaw)]
+    result))
+
+; caseClause can be of this type:
+; :caseClause {
+;              {:whenConditions ({:clause {:column "quantity", :operation ">", :bound "30"}, :value "the quantity is greater than 30"}
+;                                {:clause {:column "quantity", :operation "=", :bound "30"}, :value "the quantity is 30"})
+;               :elseCondition "the quantity is under 30"}
+;             }
 
 ; ========================================
 ; Implementation for SELECT DISTINCT query
@@ -831,15 +814,15 @@
       clauses))
   )
 
-; parses the simple clause (e.g.: from "mp_id>=21000" to { :column "mp_id"
+; parses the simple clause (e.g.: from ["mp_id>=21000"] to { :column "mp_id"
 ;                                                          :operation ">="
 ;                                                          :bound "21000" }
-;                                 from "not mp_id>=21000" to { :column "mp_id"
+;                                 from ["not" "mp_id>=21000"] to { :column "mp_id"
 ;;                                                             :operation "<="
 ;;                                                             :bound "21000" })
 (defn getSimpleClause
   [clause_undone]
-  (print "=====GETSIMPLECLAUSE=====")
+  ;(print "=====GETSIMPLECLAUSE=====")
   (let [clause (if (some #(= "not" %) clause_undone)
                  (clojure.string/join " " (subvec clause_undone 1))
                  (clojure.string/join " " (subvec clause_undone 0)))
@@ -852,7 +835,7 @@
                                                      (get oppositeOperations operation)
                                                      operation))
         bound (str (subs clause (+ (count operation) (clojure.string/index-of clause operation))))]
-    (println "finished getSimpleClause")
+    ;(println "finished getSimpleClause")
     {:column column
      :operation finalOperation
      :bound (if (and (starts-with? bound "'") (ends-with? bound "'"))
@@ -908,9 +891,9 @@
 ; (getHavingClause ["full_name" ">=" "'a" "b'"] "temp_file")
 (defn getHavingClause
   [query_raw file]
-  (println "=====GETHAVINGCLAUSE=====")
-  (print "query_raw: ")
-  (println query_raw)
+  ;(println "=====GETHAVINGCLAUSE=====")
+  ;(print "query_raw: ")
+  ;(println query_raw)
   (let [clauseWord (cond
                        (some #(= "and" %) query_raw) "and"
                        (some #(= "or" %) query_raw) "or"
@@ -923,10 +906,10 @@
                         :clause (vector (getSimpleClause query_raw))})
         parsedColumns (for [elem (:clause parsedClause)]
                         (parseHavingColumn (:column elem) file))]
-    (print "parsedClause: ")
-    (println parsedClause)
-    (print "parsedColumns: ")
-    (println parsedColumns)
+    ;(print "parsedClause: ")
+    ;(println parsedClause)
+    ;(print "parsedColumns: ")
+    ;(println parsedColumns)
     (assoc parsedClause :columns parsedColumns)))
 
 ; mp_id name asc
@@ -1015,25 +998,70 @@
        :case nil
        :caseClause nil})))
 
+(defn getCaseValue
+  [query_raw]
+  ;(println "=====getCaseValue=====")
+  (let [else_raw (join " " query_raw)
+        else_result (if (= \' (first else_raw))
+                      (clojure.string/replace else_raw "'" "")
+                      (eval (read-string else_raw)))]
+    else_result))
+
 (defn getCaseWhenClause
-  [query_raw])
+  [query_raw]
+  ;(println "=====getCaseWhenClause=====")
+  (let [temp_vector_for_word (subvec query_raw (.indexOf query_raw "when") (.indexOf query_raw "then"))
+        temp_vector (subvec query_raw (.indexOf query_raw "then"))
+        whenFirst? (some #(= "when" %) temp_vector)
+        clauseWord (cond
+                     (some #(= "and" %) temp_vector_for_word) "and"
+                     (some #(= "or" %) temp_vector_for_word) "or"
+                     :else nil)]
+    (remove nil? (apply conj
+                        [{:clauseWord clauseWord
+                          :clause (if (some? clauseWord)
+                                    (for [element (parseComplexClause (subvec query_raw
+                                                                              (+ 1 (.indexOf query_raw "when"))
+                                                                              (.indexOf query_raw "then"))
+                                                                      clauseWord)]
+                                      (getSimpleClause element))
+                                    (vector (getSimpleClause (subvec query_raw
+                                                                     (+ 1 (.indexOf query_raw "when"))
+                                                                     (.indexOf query_raw "then")))))
+                          :value (getCaseValue (subvec temp_vector
+                                                       (+ 1 (.indexOf temp_vector "then"))
+                                                       (if whenFirst?
+                                                         (.indexOf temp_vector "when")
+                                                         (.indexOf temp_vector "else"))))}]
+                        (if whenFirst?
+                          (getCaseWhenClause (subvec temp_vector (.indexOf temp_vector "when"))))
+                        []))))
 
 (defn parseCaseClause
   [query_raw file]
-  (print "=====parseCaseClause=====")
+  ;(println "=====parseCaseClause=====")
   (if (and (some #(= "when" %) query_raw)
            (some #(= "then" %) query_raw)
            (some #(= "else" %) query_raw)
            (some #(= "end" %) query_raw)
            (some #(= "as" %) query_raw))
-    (let [whenConditions (getCaseWhenClause (subvec query_raw (+ 1 (.indexOf query_raw "case")) (.indexOf query_raw "else")))
-          elseCondition (nth query_raw (+ 1 (.indexOf query_raw "else")))
+    (let [whenConditions (flatten (getCaseWhenClause (subvec query_raw (+ 1 (.indexOf query_raw "case")) (+ 1 (.indexOf query_raw "else")))))
+          elseCondition (getCaseValue (subvec query_raw (+ 1 (.indexOf query_raw "else")) (.indexOf query_raw "end")))
           column_str (parseHavingColumn (nth query_raw (+ 1 (.indexOf query_raw "as"))) file)]
+      ;(print "whenConditions: ")
+      ;(println whenConditions)
+      ;(print "elseCondition: ")
+      ;(println elseCondition)
+      ;(print "column_str: ")
+      ;(println column_str)
       {:column (get column_str :column)
        :function (get column_str :function)
        :file (get column_str :file)
-       :whenConditions whenConditions
-       :elseCondition elseCondition})
+       :case true
+       :caseClause {
+                    :whenConditions whenConditions
+                    :elseCondition elseCondition
+                    }})
     (throw (Exception. "Case expression is not correctly built! It should look like \"case when ... then ... (...) else ... end as ...\"!"))))
 
 ; parses the columns and functions into
@@ -1046,19 +1074,12 @@
 ; )
 (defn getColumns
   [query_raw commands file]
-  (println "==================GETCOLUMNS==================")
-  (print "query_raw: ")
-  (println query_raw)
-  (print "commands: ")
-  (println commands)
-  (print "file: ")
-  (println file)
+  ;(println "==================GETCOLUMNS==================")
   (let [columns (subvec query_raw
                         (if (some #(= "distinct" %) commands)
                           2
                           1)
-                        (.indexOf query_raw "from"))
-        usedCase? (some #(= "case" %) commands)]
+                        (.indexOf query_raw "from"))]
     (processColumns (flatten (for [col columns]
                                (if (= 0 (index-of col "case"))
                                  (let [query_case (clojure.string/split col #" ")
@@ -1356,7 +1377,7 @@
 ; on ~, having
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having Count(mp_id)<11;
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч';
-; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' or Count(mp_id)<4;
+; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' or Sum(mp_id)<3584 order by Count(mp_id);
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
 ; INNER JOIN + GROUP BY
 ; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
@@ -1364,4 +1385,5 @@
 ; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having Count(mps-declarations_rada.mp_id)<=21;
 
 ; on ~, case
-; select OrderID, Quantity, case when Quantity > 30 then "The quantity is greater than 30" when Quantity = 30 then "The quantity is 30" else "The quantity is under 30" end as QuantityText from OrderDetails;
+; select distinct mp_id, case when mp_id<2000 and mp_id>1000 then 'Lesser than 2000 and bigger than 1000' when mp_id<10000 then 'Between 2000 and 10000' when mp_id<20000 then 'Between 10000 and 20000' else 'Bigger than 20000' end as Boundary from mp-posts_full order by mp_id;
+; select distinct mp_id, case when mp_id<2000 then 'Less than 2000' when mp_id<10000 then 'Between 2000 and 10000' when mp_id<20000 then 'Between 10000 and 20000' else 'Bigger than 20000' end as Boundary from mp-posts_full order by mp_id;
