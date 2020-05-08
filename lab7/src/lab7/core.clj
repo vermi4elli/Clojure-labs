@@ -847,16 +847,7 @@
         operationsTranslations {">=" ">=", "<=" "<=", "<>" "not=", "=" "=", "<" "<", ">" ">"}
         operation (first (remove nil? (for [element (keys operationsTranslations)]
                                         (if-not (nil? (clojure.string/index-of clause element)) element))))
-        column_raw (clojure.string/replace (clojure.string/replace (subs clause 0 (clojure.string/index-of clause operation)) "(" "<") ")" ">")
-        column (if (and (some? (clojure.string/index-of column_raw "<"))
-                        (some? (clojure.string/index-of column_raw ".")))
-                 (str (subs column_raw (+ 1 (clojure.string/index-of column_raw ".")) (clojure.string/index-of column_raw "<"))
-                      "<"
-                      (subs column_raw 0 (clojure.string/index-of column_raw "."))
-                      "."
-                      (subs column_raw (+ 1 (clojure.string/index-of column_raw "<")) (clojure.string/index-of column_raw ">"))
-                      ">")
-                 column_raw)
+        column (clojure.string/replace (clojure.string/replace (subs clause 0 (clojure.string/index-of clause operation)) "(" "<") ")" ">")
         finalOperation (get operationsTranslations (if (some #(= "not" %) clause_undone)
                                                      (get oppositeOperations operation)
                                                      operation))
@@ -908,7 +899,9 @@
                    nil)]
     {:column column
      :function function
-     :file file_temp}))
+     :file file_temp
+     :case nil
+     :caseClause nil}))
 
 ; (getHavingClause ["mp_id" ">=" "21000" "and" "mp_id" "<=" "21200" "and" "count(mp_id)" ">=" "21000"] "temp_file")
 ; (getHavingClause ["count(mp_id)" ">=" "21000"] "temp_file")
@@ -1022,15 +1015,25 @@
        :case nil
        :caseClause nil})))
 
+(defn getCaseWhenClause
+  [query_raw])
+
 (defn parseCaseClause
-  [query_raw]
+  [query_raw file]
   (print "=====parseCaseClause=====")
   (if (and (some #(= "when" %) query_raw)
            (some #(= "then" %) query_raw)
            (some #(= "else" %) query_raw)
            (some #(= "end" %) query_raw)
            (some #(= "as" %) query_raw))
-    (let [])
+    (let [whenConditions (getCaseWhenClause (subvec query_raw (+ 1 (.indexOf query_raw "case")) (.indexOf query_raw "else")))
+          elseCondition (nth query_raw (+ 1 (.indexOf query_raw "else")))
+          column_str (parseHavingColumn (nth query_raw (+ 1 (.indexOf query_raw "as"))) file)]
+      {:column (get column_str :column)
+       :function (get column_str :function)
+       :file (get column_str :file)
+       :whenConditions whenConditions
+       :elseCondition elseCondition})
     (throw (Exception. "Case expression is not correctly built! It should look like \"case when ... then ... (...) else ... end as ...\"!"))))
 
 ; parses the columns and functions into
@@ -1059,22 +1062,24 @@
     (processColumns (flatten (for [col columns]
                                (if (= 0 (index-of col "case"))
                                  (let [query_case (clojure.string/split col #" ")
-                                       query_remade (parseCaseClause query_case)]
+                                       query_remade (parseCaseClause query_case file)]
                                    query_remade)
                                  (let [indexLeft (index-of col "(")
                                        indexRight (index-of col ")")
                                        indexDot (index-of col ".")
                                        column (cond
-                                                (some? indexLeft) (subs col (+ 1 indexLeft) indexRight)
+                                                (and (some? indexDot)
+                                                     (some? indexRight)) (subs col (+ 1 indexDot) indexRight)
                                                 (some? indexDot) (subs col (+ 1 indexDot))
+                                                (some? indexLeft) (subs col (+ 1 indexLeft) indexRight)
                                                 :else col)
-                                       file_temp (if (some? indexDot)
-                                                   (subs col 0 indexDot)
-                                                   file)
+                                       file_temp (cond
+                                                   (and (some? indexDot)
+                                                        (some? indexLeft)) (subs col (+ 1 indexLeft) indexDot)
+                                                   (some? indexDot) (subs col 0 indexDot)
+                                                   :else file)
                                        function (if (some? indexLeft)
-                                                  (if (some? indexDot)
-                                                    (subs col (+ 1 indexDot) indexLeft)
-                                                    (subs col 0 indexLeft))
+                                                  (subs col 0 indexLeft)
                                                   nil)]
                                    (if (= "*" column)
                                      (getColumnsFromStar file_temp)
@@ -1323,7 +1328,7 @@
 
 ; on ~, inner join, functions + inner join
 ; select mps-declarations_rada.mp_id from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
 ; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 inner join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by map_zal.skl9.id_mp desc;
@@ -1335,7 +1340,7 @@
 ; on ~, full outer join, functions + full outer join (change to left join if you want)
 ; select distinct map_zal-skl9.id_mp, mp-posts_full.mp_id from map_zal-skl9 full outer join mp-posts_full on map_zal-skl9.id_mp = mp-posts_full.mp_id order by map_zal-skl9.id_mp desc, mp-posts_full.mp_id desc;
 ; select mps-declarations_rada.mp_id from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
-; select distinct mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
+; select distinct Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id order by mps-declarations_rada.mp_id;
 ; select distinct mps-declarations_rada.mp_id, mp-posts_full.full_name from mps-declarations_rada full outer join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id where mps-declarations_rada.mp_id=15816;
@@ -1354,9 +1359,9 @@
 ; select Count(mp_id), full_name from mp-posts_full group by full_name having full_name='Іванов Володимир Ілліч' or Count(mp_id)<4;
 ; select Count(mp_id), Sum(mp_id), full_name from mp-posts_full group by full_name order by Sum(mp_id);
 ; INNER JOIN + GROUP BY
-; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
+; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name;
 ; THE SAME + HAVING
-; select mps-declarations_rada.Count(mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having mps-declarations_rada.Count(mp_id)<21;
+; select Count(mps-declarations_rada.mp_id), mp-posts_full.full_name from mps-declarations_rada inner join mp-posts_full on mps-declarations_rada.mp_id = mp-posts_full.mp_id group by mp-posts_full.full_name having Count(mps-declarations_rada.mp_id)<=21;
 
 ; on ~, case
 ; select OrderID, Quantity, case when Quantity > 30 then "The quantity is greater than 30" when Quantity = 30 then "The quantity is 30" else "The quantity is under 30" end as QuantityText from OrderDetails;
