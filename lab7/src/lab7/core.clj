@@ -1018,7 +1018,20 @@
     (for [elem columns_raw]
       {:column (name elem)
        :function nil
-       :file file})))
+       :file file
+       :case nil
+       :caseClause nil})))
+
+(defn parseCaseClause
+  [query_raw]
+  (print "=====parseCaseClause=====")
+  (if (and (some #(= "when" %) query_raw)
+           (some #(= "then" %) query_raw)
+           (some #(= "else" %) query_raw)
+           (some #(= "end" %) query_raw)
+           (some #(= "as" %) query_raw))
+    (let [])
+    (throw (Exception. "Case expression is not correctly built! It should look like \"case when ... then ... (...) else ... end as ...\"!"))))
 
 ; parses the columns and functions into
 ; (
@@ -1043,10 +1056,11 @@
                           1)
                         (.indexOf query_raw "from"))
         usedCase? (some #(= "case" %) commands)]
-    (if usedCase?
-      (let [caseColumns nil
-            ])
-      (processColumns (flatten (for [col columns]
+    (processColumns (flatten (for [col columns]
+                               (if (= 0 (index-of col "case"))
+                                 (let [query_case (clojure.string/split col #" ")
+                                       query_remade (parseCaseClause query_case)]
+                                   query_remade)
                                  (let [indexLeft (index-of col "(")
                                        indexRight (index-of col ")")
                                        indexDot (index-of col ".")
