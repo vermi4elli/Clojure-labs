@@ -1,8 +1,11 @@
-# Clojure-labs
-- lab1, done
-- lab2, done
-- lab3, done
-- lab4, done
-- lab5, done
-- lab6, done
-- lab7, done
+# File parser via SQL-like commands
+(The example of files you can find in the beginning of the file)
+You can use
+- SELECT
+- FROM
+- WHERE
+- ORDER BY
+- HAVING
+- CASE
+- Aggregate functions with column names
+- JOIN
