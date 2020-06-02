@@ -1,7 +1,9 @@
 # File parser via SQL-like commands
-(The example of files you can find in the beginning of the file)
+The Clojure labs of the Functional Programming course
+(The example of files and the usage you can find in the src.clj file in the lab7 folder)
 You can use
 - SELECT
+- DISTINCT
 - FROM
 - WHERE
 - ORDER BY
